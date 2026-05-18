@@ -46,6 +46,7 @@ done
 PASS=0
 FAIL=0
 NA=0
+REQUIRED_NA=0
 
 check() {
   local name="$1"
@@ -233,9 +234,11 @@ if [[ -f "$LEDGER" ]]; then
   if [[ "$BOOTSTRAP_INDEX" -ge 1 && "$BOOTSTRAP_RECENT" -ge 3 && "$BOOTSTRAP_HOOK" -ge 1 ]]; then
     check "A11" "PASS" "(index=$BOOTSTRAP_INDEX, recent=$BOOTSTRAP_RECENT, hook=$BOOTSTRAP_HOOK)"
   else
+    REQUIRED_NA=$((REQUIRED_NA+1))
     check "A11" "NA" "(非老项目 bootstrap fixture，index=$BOOTSTRAP_INDEX, recent=$BOOTSTRAP_RECENT, hook=$BOOTSTRAP_HOOK)"
   fi
 else
+  REQUIRED_NA=$((REQUIRED_NA+1))
   check "A11" "NA" "(无 ledger，非 bootstrap fixture 或 A8 已失败)"
 fi
 
@@ -244,8 +247,13 @@ echo ""
 echo "=== 汇总 ==="
 echo "PASS: $PASS / FAIL: $FAIL / N/A: $NA"
 
-if [[ "$FAIL" -gt 0 ]]; then
-  echo "❌ 有 $FAIL 条断言不通过 — 检查上方 FAIL 详情"
+if [[ "$FAIL" -gt 0 || "$REQUIRED_NA" -gt 0 ]]; then
+  if [[ "$FAIL" -gt 0 ]]; then
+    echo "❌ 有 $FAIL 条断言不通过 — 检查上方 FAIL 详情"
+  fi
+  if [[ "$REQUIRED_NA" -gt 0 ]]; then
+    echo "❌ 有 $REQUIRED_NA 条连续性必测断言为 N/A — 需要 continuity fixture 才能完整 release"
+  fi
   echo ""
   echo "建议下一步："
   echo "  1. 记录失败 case 到 baseline-vX.X.X.md"

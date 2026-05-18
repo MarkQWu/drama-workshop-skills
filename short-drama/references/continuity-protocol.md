@@ -94,11 +94,12 @@ Phase 1A 不复制全剧红线全文。全剧红线仍以 `creative-plan.md`、`
 
 1. 读取 `.drama-state.json`，确认 active project、mode、medium、completedEpisodes。
 2. 读取 `creative-plan.md`、`characters.md`、`episode-directory.md`。
-3. 读取 `continuity-ledger.md`；不存在则按本协议创建。
-4. 若 `completedEpisodes > 0` 且 ledger 不存在，先执行“老项目 bootstrap”。
-5. 读取 `used-lines.md`。
-6. 读取上一集全文。
-7. N ≤ 10 可读取全部已完成正文；N > 10 读取 ledger + 上一集全文 + 近 2-3 集 `CONTINUITY` / 分集索引，必要时按伏笔证据精确读取远期正文。
+3. 判断 `continuity-ledger.md` 是否存在。
+4. 若 ledger 不存在且 `completedEpisodes > 0`，先执行“老项目 bootstrap”，不得先创建空模板。
+5. 若 ledger 不存在且 `completedEpisodes` 为空，按本协议创建空模板。
+6. 读取 `used-lines.md`。
+7. 读取上一集全文。
+8. N ≤ 10 可读取全部已完成正文；N > 10 读取 ledger + 上一集全文 + 近 2-3 集 `CONTINUITY` / 分集索引，必要时按伏笔证据精确读取远期正文。
 
 生成中：
 
@@ -203,6 +204,13 @@ characters.md + continuity-ledger.md + 目标集正文
 3. 必要时读取剥离后的 `episodes/` 正文
 
 `/导出 {N}` 单集导出必须先生成剥离后的临时 markdown，再调用 `export_docx.py`。不得直接把包含 `CONTINUITY` 的 `episodes/epNNN.md` 交给 pandoc。
+
+`/导出 --with-bible-ref` 的剥离规则必须分两步：
+
+1. 删除 `<!-- CONTINUITY ... -->` 机器块。
+2. 保留正文结束边界之后的考据附录。
+
+也就是说，默认导出是“只保留正文边界前内容”；`--with-bible-ref` 是“保留正文 + 考据附录，但删除 `CONTINUITY` 块”。
 
 ## /分镜 正文剥离规则
 

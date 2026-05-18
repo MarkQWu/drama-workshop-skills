@@ -784,7 +784,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 - 不使用 AI slop 辞藻（参见 `quality-rules.md` 禁用词表 Type 1-5 全局 + Type 6 仅本合成路径）
 - 润色后人物小传**不回写** `characters.md`（原字段保留给其他命令消费）
 
-**考据引用附录与 CONTINUITY 处理（默认剥离）：** 读取每集 `episodes/ep{NNN}.md` 按边界标记 `<!-- 剧本正文到此结束 -->`（位于双分隔线之间）切分——默认只保留边界**之前**的剧本正文；传 `--with-bible-ref` 保留附录，但 `CONTINUITY` 仍不得进入 docx 正文或梗概输入。**此剥离规则同时适用于梗概综合 LLM 输入（步骤 1 hash 计算与步骤 2/3 正文输入）与 docx 写入。** Fallback：未检测到边界（老集数 v1.15.7-）→ 保留全文；检测到多个边界 → 以第一个为准。
+**考据引用附录与 CONTINUITY 处理（默认剥离）：** 读取每集 `episodes/ep{NNN}.md` 按边界标记 `<!-- 剧本正文到此结束 -->`（位于双分隔线之间）切分——默认只保留边界**之前**的剧本正文；传 `--with-bible-ref` 时执行两步：先删除 `<!-- CONTINUITY ... -->` 机器块，再保留正文 + 考据附录。`CONTINUITY` 永远不得进入 docx 正文或梗概输入。**此剥离规则同时适用于梗概综合 LLM 输入（步骤 1 hash 计算与步骤 2/3 正文输入）与 docx 写入。** Fallback：未检测到边界（老集数 v1.15.7-）→ 保留全文；检测到多个边界 → 以第一个为准。
 
 **输出格式：** 见 `references/output-templates.md#导出`
 
