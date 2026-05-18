@@ -10,7 +10,7 @@
 #
 # 前置条件：
 #   1. 已用 sample 内容跑完 /开始 → /策划 → /分集目录 → /分集 1 → /自检 1
-#   2. 项目目录下有 episodes/ep001.md + reviews/ep001-review.md + creative-plan.md
+#   2. 项目目录下有 episodes/ep001.md + checks/ep001-check.md（或旧 reviews/ep001-review.md）+ creative-plan.md
 
 set -uo pipefail
 
@@ -29,7 +29,10 @@ if [[ ! -d "$PROJECT_DIR" ]]; then
 fi
 
 EP1="$PROJECT_DIR/episodes/ep001.md"
-REVIEW="$PROJECT_DIR/reviews/ep001-review.md"
+REVIEW="$PROJECT_DIR/checks/ep001-check.md"
+if [[ ! -f "$REVIEW" && -f "$PROJECT_DIR/reviews/ep001-review.md" ]]; then
+  REVIEW="$PROJECT_DIR/reviews/ep001-review.md"
+fi
 PLAN="$PROJECT_DIR/creative-plan.md"
 
 for f in "$EP1" "$REVIEW" "$PLAN"; do
@@ -158,6 +161,82 @@ if [[ "$IS_OVERSEAS" -eq 1 ]]; then
   fi
 else
   check "A6" "NA" "(mode=domestic)"
+fi
+
+echo ""
+echo "## A7 CONTINUITY 块位置与字段"
+BOUNDARY_LINE=$(grep -n "<!-- 剧本正文到此结束 -->" "$EP1" | head -1 | cut -d: -f1 || true)
+CONTINUITY_LINE=$(grep -n "<!-- CONTINUITY" "$EP1" | head -1 | cut -d: -f1 || true)
+CONTINUITY_FIELDS=$(grep -cE "角色状态变化：|伏笔与回收：|尾钩义务：" "$EP1" || true)
+OLD_FIELDS=$(grep -cE "核心事件：|新增伏笔：|回收伏笔：|需要后续强化：" "$EP1" || true)
+if [[ -n "$BOUNDARY_LINE" && -n "$CONTINUITY_LINE" && "$CONTINUITY_LINE" -gt "$BOUNDARY_LINE" && "$CONTINUITY_FIELDS" -ge 3 && "$OLD_FIELDS" -eq 0 ]]; then
+  check "A7" "PASS" "(boundary=$BOUNDARY_LINE, continuity=$CONTINUITY_LINE, fields=$CONTINUITY_FIELDS)"
+else
+  check "A7" "FAIL" "(boundary=${BOUNDARY_LINE:-missing}, continuity=${CONTINUITY_LINE:-missing}, fields=$CONTINUITY_FIELDS, oldFields=$OLD_FIELDS)"
+fi
+
+echo ""
+echo "## A8 ledger 创建与分集索引"
+LEDGER="$PROJECT_DIR/continuity-ledger.md"
+if [[ -f "$LEDGER" ]]; then
+  LEDGER_SECTIONS=$(grep -cE "^## 角色动态状态|^## 活跃主线伏笔|^## 分集索引" "$LEDGER" || true)
+  LEDGER_EP1=$(grep -cE "^\| *1 *\||第1集|ep001" "$LEDGER" || true)
+  if [[ "$LEDGER_SECTIONS" -ge 3 && "$LEDGER_EP1" -ge 1 ]]; then
+    check "A8" "PASS" "(sections=$LEDGER_SECTIONS, ep1=$LEDGER_EP1)"
+  else
+    check "A8" "FAIL" "(sections=$LEDGER_SECTIONS, ep1=$LEDGER_EP1)"
+  fi
+else
+  check "A8" "FAIL" "(continuity-ledger.md 不存在)"
+fi
+
+echo ""
+echo "## A9 尾钩义务承接"
+EP2="$PROJECT_DIR/episodes/ep002.md"
+CHECK2="$PROJECT_DIR/checks/ep002-check.md"
+if [[ -f "$EP2" ]]; then
+  HOOK_CARRY=$(head -n 80 "$EP2" | grep -cE "匿名短信|报告不是原件|尾钩|上一集" || true)
+  CHECK_CARRY=0
+  if [[ -f "$CHECK2" ]]; then
+    CHECK_CARRY=$(grep -cE "尾钩义务|承接上一集|连续性" "$CHECK2" || true)
+  fi
+  if [[ "$HOOK_CARRY" -ge 1 && "$CHECK_CARRY" -ge 1 ]]; then
+    check "A9" "PASS" "(ep2 head carry=$HOOK_CARRY, check=$CHECK_CARRY)"
+  else
+    check "A9" "FAIL" "(ep2 head carry=$HOOK_CARRY, check=$CHECK_CARRY)"
+  fi
+else
+  check "A9" "NA" "(未提供 ep002 连续性 fixture)"
+fi
+
+echo ""
+echo "## A10 交付路径剥离 CONTINUITY"
+LEAK_COUNT=0
+if [[ -d "$PROJECT_DIR/export" ]]; then
+  LEAK_COUNT=$((LEAK_COUNT + $(grep -R -cE "CONTINUITY|角色状态变化：|伏笔与回收：|尾钩义务：" "$PROJECT_DIR/export" 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')))
+fi
+if [[ -d "$PROJECT_DIR/storyboards" ]]; then
+  LEAK_COUNT=$((LEAK_COUNT + $(grep -R -cE "CONTINUITY|角色状态变化：|伏笔与回收：|尾钩义务：" "$PROJECT_DIR/storyboards" 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')))
+fi
+if [[ "$LEAK_COUNT" -eq 0 ]]; then
+  check "A10" "PASS" "(export/storyboards 未检出机器块)"
+else
+  check "A10" "FAIL" "(export/storyboards 检出 $LEAK_COUNT 处机器块)"
+fi
+
+echo ""
+echo "## A11 老项目 bootstrap"
+if [[ -f "$LEDGER" ]]; then
+  BOOTSTRAP_INDEX=$(grep -cE "^## 分集索引" "$LEDGER" || true)
+  BOOTSTRAP_RECENT=$(grep -cE "1|2|3|ep001|ep002|ep003|第1集|第2集|第3集" "$LEDGER" || true)
+  BOOTSTRAP_HOOK=$(grep -cE "尾钩|义务|下一集" "$LEDGER" || true)
+  if [[ "$BOOTSTRAP_INDEX" -ge 1 && "$BOOTSTRAP_RECENT" -ge 3 && "$BOOTSTRAP_HOOK" -ge 1 ]]; then
+    check "A11" "PASS" "(index=$BOOTSTRAP_INDEX, recent=$BOOTSTRAP_RECENT, hook=$BOOTSTRAP_HOOK)"
+  else
+    check "A11" "NA" "(非老项目 bootstrap fixture，index=$BOOTSTRAP_INDEX, recent=$BOOTSTRAP_RECENT, hook=$BOOTSTRAP_HOOK)"
+  fi
+else
+  check "A11" "NA" "(无 ledger，非 bootstrap fixture 或 A8 已失败)"
 fi
 
 # 汇总

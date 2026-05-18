@@ -493,6 +493,11 @@ graph TD
 
 ---
 <!-- 剧本正文到此结束 -->
+<!-- CONTINUITY
+角色状态变化：
+伏笔与回收：
+尾钩义务：
+-->
 ---
 
 # 附录：本集考据引用（厚型/中型题材必填，轻型省略）
@@ -551,6 +556,14 @@ graph TD
 
 > [钩子] 结尾钩子：{cliffhanger}
 > [预告] 下一集：{next episode preview}
+
+---
+<!-- 剧本正文到此结束 -->
+<!-- CONTINUITY
+角色状态变化：
+伏笔与回收：
+尾钩义务：
+-->
 ```
 
 ---
@@ -608,6 +621,14 @@ Scene description layer **forbids first-person sensory verbs** (felt/sensed/real
 
 > [钩子] End Hook: {cliffhanger}
 > [预告] Next: {next episode preview}
+
+---
+<!-- 剧本正文到此结束 -->
+<!-- CONTINUITY
+角色状态变化：
+伏笔与回收：
+尾钩义务：
+-->
 ```
 
 ---
@@ -1235,6 +1256,7 @@ Step 5: 剪辑成片（外部工具）
 - `creative-plan.md`：创作方案
 - `characters.md`：角色档案
 - `episode-directory.md`：分集目录
+- `continuity-ledger.md`：跨集剧情记忆
 - `episodes/`：分集剧本
 - `brainstorm.md`：构思与配置决策记录
 

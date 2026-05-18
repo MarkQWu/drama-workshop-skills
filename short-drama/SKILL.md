@@ -406,7 +406,7 @@ graph LR
 
 **前置条件：** 已完成 /分集目录
 
-**加载参考：** three-layer-control.md（锁本集 story job / entry pressure / turning point / exit hook，释放具体台词、动作和场面质感）, opening-rules.md（**仅第 1 集 Read**，其他集跳过）, rhythm-curve.md, satisfaction-matrix.md, hook-design.md, quality-rules.md（跨介质通用规则 + 自检维度）, creative-intent-ledger.md（用于防止分集背离原始前提、核心关系和不可牺牲点）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, **setting-bible.md**（如存在，强制引用专业细节）, **used-lines.md**（存在则读，跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）, **工艺通用补充**（按需读，覆盖中英文）：`vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏）/ `dramatic-truth.md`（对白真实性 4 症状）/ `script-element-extraction.md`（5 类元素分层 pipeline）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单）
+**加载参考：** three-layer-control.md（锁本集 story job / entry pressure / turning point / exit hook，释放具体台词、动作和场面质感）, continuity-protocol.md（跨集剧情记忆、ledger 读写、尾钩义务承接）, opening-rules.md（**仅第 1 集 Read**，其他集跳过）, rhythm-curve.md, satisfaction-matrix.md, hook-design.md, quality-rules.md（跨介质通用规则 + 自检维度）, creative-intent-ledger.md（用于防止分集背离原始前提、核心关系和不可牺牲点）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, **setting-bible.md**（如存在，强制引用专业细节）, **used-lines.md**（存在则读，跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）, **continuity-ledger.md**（存在则读；不存在按 `continuity-protocol.md` 创建或 bootstrap）, **工艺通用补充**（按需读，覆盖中英文）：`vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏）/ `dramatic-truth.md`（对白真实性 4 症状）/ `script-element-extraction.md`（5 类元素分层 pipeline）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单）
 
 **anchor inline + `--fix anchor-rhythm` 子命令：** 如 `creative-plan.md` 有 `anchor` 字段，按 `references/anchor-trigger.md#分集-anchor-inline` 把 anchor prompt 模板 inline 到分集生成 prompt；无 `anchor` 字段则跳过。节奏污染时 `/分集 N --fix anchor-rhythm` 重写（详见 `references/anchor-trigger.md#fix-anchor-rhythm-子命令`）。
 
@@ -467,6 +467,13 @@ graph LR
 
 **上下文窗口管理：** 见 `references/quality-rules.md#上下文窗口管理50-集长剧`
 
+**连续性台账（Phase 1A）：**
+- 生成前读取或创建项目根 `continuity-ledger.md`。若老项目 `completedEpisodes > 0` 且 ledger 不存在，先按 `references/continuity-protocol.md#老项目-bootstrap` 生成轻量台账，再写下一集。
+- 若上一集 `CONTINUITY` 的 `尾钩义务` 非空，本集前 3 个动作/对白单元必须承接；无法承接时先修本集开头，不继续生成完整集。
+- N ≤ 10 可读全部已完成正文；N > 10 不默认读全部历史正文，改读 ledger + 上一集全文 + 近 2-3 集 `CONTINUITY` / 分集索引，必要时按伏笔证据精确读取远期正文。
+- 生成中出现身份、关键道具、隐瞒、主线反转、付费承诺、关系转折前置线索时，必须写入本集 3 字段 `CONTINUITY`。
+- 生成后按 Read-Modify-Write 更新 `continuity-ledger.md`，再更新 `.drama-state.json#completedEpisodes`。批量 `/分集 5-8` 时，每写完一集先更新 ledger，再写下一集。
+
 **输出：** 保存为 `episodes/ep{NNN}.md`（三位数补零）
 
 **写完后强制追加 used-lines.md（跨集台词去重）：** 本集保存后，提取 3-5 条"高复读风险台词"（情绪锚句 / 遗言告别 / 口头禅 / 3 字以上标志性形容词组合 / 特殊意象），按 Read-Modify-Write 协议追加到 `used-lines.md` 新 section `## ep{NNN}`。格式：`- "台词原文" [角色][场景 one-liner][类别]`。**硬下限 3 条**，少于 3 条视为未执行。详细判定标准/反模式见 `references/used-lines-protocol.md#写入规则`。
@@ -492,7 +499,7 @@ graph LR
 
 **前置条件：** 目标集数已完成
 
-**加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, quality-rules.md（自检维度细则 + 跨介质通用规则）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单）
+**加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单）
 
 **支持格式：** `/自检 5` | `/自检 1-10` | `/自检 all` | `/自检 5 --fix`
 
@@ -504,7 +511,7 @@ graph LR
 | 爽点 | /15 | 数量/强度/类型多样性 + 期待管理 + 痛点铺垫 + 困境三原则（按题材分化评判） | <3 个爽点 ≤6 分 |
 | 台词 | /10 | 功能密度 + 精简口语化 + 角色区分度 + 题材语感（参考 realism-checklist.md） | **单条台词句数扫描**：按 `。！？` 切分，ai_live 超 2 句逐条标出 · comic 超 6 句逐条标出 |
 | 格式与可拍性 | /5 | 场景头/景别/音乐 + 场景角色数量限制 + 制作难度评估（门槛型：达标即可） | **场次数硬扫描**：ai_live 正则 `^## \d+-\d+ ` 计数，不在 3-5 范围扣分；comic 正则 `^\d+-\d+[日夜]/[内外]` 计数（强制日/夜 + 内/外完整格式），>3 红线 / 2<x≤3 黄线 / ≤2 绿线 |
-| 主线与连贯性 | /10 | 灵魂三问 + 目标层层递进 + 前后一致 + 转变逻辑（参考 realism-checklist.md）+ **跨集台词复用扫描**（本集关键台词 grep `used-lines.md`，精确/近似命中 ≥1 次 -2 分，≥3 次 -5 分。扫描规则见 `used-lines-protocol.md#自检扫描规则`，例外见"允许的例外"）+ **前 30s 钩子位置扫描**（剧本正文前 1/3 **字数**中必须出现至少 1 次冲突/爆点；字数按中文字符计，不含 `>` 引用块 / H1 标题 / `---` 分隔符 / HTML 注释 / 集末自查等元信息段；否则该维度 -2） | 跨集台词复用 ≥3 次该维度上限 3 分 |
+| 主线与连贯性 | /10 | 灵魂三问 + 目标层层递进 + 前后一致 + 转变逻辑（参考 realism-checklist.md）+ **连续性三问**（是否承接上一集尾钩义务；是否无依据改写角色/关系/已发生事件；是否出现主线级伏笔但未登记）+ **跨集台词复用扫描**（本集关键台词 grep `used-lines.md`，精确/近似命中 ≥1 次 -2 分，≥3 次 -5 分。扫描规则见 `used-lines-protocol.md#自检扫描规则`，例外见"允许的例外"）+ **前 30s 钩子位置扫描**（剧本正文前 1/3 **字数**中必须出现至少 1 次冲突/爆点；字数按中文字符计，不含 `>` 引用块 / H1 标题 / `---` 分隔符 / HTML 注释 / 集末自查等元信息段；否则该维度 -2） | 跨集台词复用 ≥3 次该维度上限 3 分；无事件触发改写角色已知信息 = `[地基层阻断]`；遗漏上一集尾钩 = `[骨架层修复]`；主线级伏笔未登记 = `[骨架层修复]` |
 | 反抽象与镜头化 | /10 | **按 medium 分叉**：ai_live → 纯情绪词 + A/B/C 4 类模式 → 物理动作 / 外部反应 / 拆层；场景叙事层 + OS 超阈归本维度，单集 -3 上限；**C 类 vs 上帝视角**不重复扣；详见 `quality-rules.md#反抽象-画面可拍性规则-轻约束`。comic → **固定 10/10**（漫剧分镜特写可承载微表情，不适用 ai_live 的反抽象扣分），总分稳定 | — |
 | AI Slop | /10 | 书面化扫描 + 情绪过平滑 + 巧合堆砌统计 + AI 生成痕迹；**场景叙事层比喻堆叠**（单集 ≥4 处 -2，与维度 6 不重复扣：同句命中 A/B/C 优先归维度 6）+ **VO 超阈**（每集 >20% 字数 -1 / 单段 >3 句 -1） | 巧合词 ≥3 次 → AI Slop ≤6；≥5 次 → ≤4（v1.18.2 硬约束） |
 | 考据可追溯性 | /10 | 专业术语映射 bible / 时代领域常识 / 制度规则一致 / 虚构白名单（题材为轻型时记 N/A 不计入总分）| 厚型题材无 bible → 0 分；命中 1 条雷区 ≤6 分；命中 ≥2 条 ≤3 分 |
@@ -514,6 +521,8 @@ graph LR
 **输出/流程：** 输出格式 `output-templates.md#自检`；`--fix` 模式 + 分数持久化见 `quality-rules.md`。
 
 **评分标准：** 总分动态——厚型/中型 80（含第 8 维度），轻型 70（第 8 维度 N/A）。完整阈值+过稿预估见 `quality-rubric.md#评分标准与平台过稿预估`。
+
+**连续性 hard gate：** 角色口吻弱只标 `[血肉层建议]`；主线级伏笔未登记不阻断当前集保存，但必须补齐 `CONTINUITY` / `continuity-ledger.md` 后才能继续 `/分集 next`。
 
 **checks/ 写入（供 /圆桌诊断 读取）：** 评分完成后，额外写入 `checks/ep{NNN}-check.md`，内容格式如下（文件不存在则新建，已存在则覆盖）：
 
@@ -648,10 +657,10 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **Step 2：语义层（LLM 分析）**
 
-**加载：** `characters.md`（全量）+ 目标集数的 `episodes/ep*.md`
+**加载：** `characters.md`（全量）+ `continuity-ledger.md`（如存在）+ 目标集数的 `episodes/ep*.md`
 
 - **指定集数范围**（如 `1-20`）：加载该范围所有集
-- **未指定范围**：加载全部已完成集；超 30 集时加载前 10 + 后 10 + 中间 10 均匀采样，超出集数标注 `[未扫描]`
+- **未指定范围**：优先用 `continuity-ledger.md#分集索引` 定位相关集；ledger 证据不足时加载全部已完成集。超 30 集时加载前 10 + 后 10 + 中间 10 均匀采样，超出集数标注 `[未扫描]`
 - **指定角色名**：仅加载该角色出现频率高的集数（grep 该角色名出现次数 ≥3 次的集）
 
 逐角色按四轴审查：
@@ -660,7 +669,8 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 |------|---------|---------|
 | 性格基线 | 对白/行为是否偏离 `characters.md` 的性格关键词 + voice 样本集 | 单集内偏离核心性格 ≥2 处 |
 | 动机连贯性 | 角色核心动机（欲望-恐惧对位）是否维持内部逻辑，有无无预兆逆转 | 动机无铺垫骤变 |
-| 称呼关系 | 角色间称呼/亲疏/权力关系是否符合 `characters.md` 称呼关系表 | 称呼退步 / 亲疏跳跃 |
+| 动态状态 | 位置、身份、伤病、能力、知道/不知道的信息是否符合 `continuity-ledger.md` | 状态跳跃 / 信息错乱 |
+| 称呼关系 | 角色间称呼/亲疏/权力关系是否符合 `characters.md` 称呼关系表和 ledger 关系变化 | 称呼退步 / 亲疏跳跃 |
 | 弧线合理性 | 当前集数的情感/成长状态是否匹配 `角色弧线（起点→转折→终点）` 的对应节点 | 弧线提前结束 / 状态倒退无因 |
 
 **Step 3：综合输出**
@@ -685,6 +695,8 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **三层门控：** 读取 `three-layer-control.md`。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/compliance-risk.md`、`hard-rules.md`，确认目标市场、IP/相似性、真实人物/AI 肖像和 source inspiration 清单已检查。`/导出` 只因地基层 hard gate、格式/文件/docx 合法性失败、海外导出合规清单缺失，或已自检且不合格的集数阻断；血肉层低分或质感弱不单独阻断导出，只能作为导出前建议。
 
+**连续性健康提示：** 读取 `references/continuity-protocol.md`。`continuity-ledger.md` 缺失时提示“建议先补连续性台账”，不单独阻断；已自检不合格仍沿用现有阻断。梗概综合优先使用 `creative-plan.md` 白名单字段 + `continuity-ledger.md#分集索引`，必要时再读剥离后的 episodes 正文。
+
 **入口确认提示（`/导出` 无集数参数时，执行任何门控之前输出）：**
 ```
 本次将导出《{剧名}》完整剧本文件（{completedEpisodes 数量} 集），包含：
@@ -707,6 +719,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 - `creative-plan.md`：一句话故事线 / 核心冲突 / **时空背景** / 国内字段（三幕结构 / 付费卡点规划 / 爽点矩阵）或出海字段（target market / genre promise / relationship grammar / power system / story function map / paid-pressure map）/ 结局设计 / anchor（如有）
 - `.drama-state.json`：`logline` / `lastSynopsisTimestamp` / `lastSynopsisEpisodeCount` / `lastSynopsisEpisodeHash` / `lastSynopsisPath`
+- `continuity-ledger.md`：优先读取 `## 分集索引` 作为实际剧情索引；文件缺失时静默跳过并提示建议补台账
 - `episodes/`：`completedEpisodes` 列表中每个 entry 对应的 `ep{entry}.md` 正文（**按下方考据附录剥离规则剥离后的版本**，不是 ep*.md 全文）
 
 **字段名模糊匹配规则**（适用于 `creative-plan.md` 字段定位）：字段标题可能带中文序号前缀（"## 一、"/"## 二、"/"## 三、"等）。匹配算法：
@@ -771,7 +784,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 - 不使用 AI slop 辞藻（参见 `quality-rules.md` 禁用词表 Type 1-5 全局 + Type 6 仅本合成路径）
 - 润色后人物小传**不回写** `characters.md`（原字段保留给其他命令消费）
 
-**考据引用附录处理（默认剥离）：** 读取每集 `episodes/ep{NNN}.md` 按边界标记 `<!-- 剧本正文到此结束 -->`（位于双分隔线之间）切分——默认只保留边界**之前**的剧本正文；传 `--with-bible-ref` 保留附录。**此剥离规则同时适用于梗概综合 LLM 输入（步骤 1 hash 计算与步骤 2/3 正文输入）与 docx 写入。** Fallback：未检测到边界（老集数 v1.15.7-）→ 保留全文；检测到多个边界 → 以第一个为准。
+**考据引用附录与 CONTINUITY 处理（默认剥离）：** 读取每集 `episodes/ep{NNN}.md` 按边界标记 `<!-- 剧本正文到此结束 -->`（位于双分隔线之间）切分——默认只保留边界**之前**的剧本正文；传 `--with-bible-ref` 保留附录，但 `CONTINUITY` 仍不得进入 docx 正文或梗概输入。**此剥离规则同时适用于梗概综合 LLM 输入（步骤 1 hash 计算与步骤 2/3 正文输入）与 docx 写入。** Fallback：未检测到边界（老集数 v1.15.7-）→ 保留全文；检测到多个边界 → 以第一个为准。
 
 **输出格式：** 见 `references/output-templates.md#导出`
 
@@ -790,7 +803,9 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 **流程：**
 1. 读取 `episodes/ep{NNN}.md`，按 `<!-- 剧本正文到此结束 -->` 边界剥离考据附录（行为同完整导出的剥离规则）
 2. 质量门控：若该集 `/自检` 不合格（读 `checks/ep{NNN}-check.md`），**阻断并提示**"第 {N} 集自检不合格（{X}分），建议先修改后再导出。传 `--force` 强制导出"；未跑自检则标黄提示不阻断
-3. 调用 `python3 {skill目录}/scripts/export_docx.py "episodes/ep{NNN}.md" "export/{剧名}-ep{NNN}.docx"` 直接生成 .docx
+3. 将第 1 步剥离后的正文写入临时文件 `export/.tmp-ep{NNN}-stripped.md`（只含 `<!-- 剧本正文到此结束 -->` 之前内容，不含 `CONTINUITY` / 考据附录）
+4. 调用 `python3 {skill目录}/scripts/export_docx.py "export/.tmp-ep{NNN}-stripped.md" "export/{剧名}-ep{NNN}.docx"` 生成 .docx
+5. 导出成功后可保留临时文件用于排查；再次导出同集时覆盖该临时文件
 
 **输出：** `export/{剧名}-ep{NNN}.docx`
 
@@ -891,7 +906,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 - `/分镜 /path/to/script.md` → 读取任意文件
 - `/分镜` + 用户直接粘贴文本 → 拆解粘贴内容
 
-**考据引用附录跳过（v1.15.8+）：** 读取 `episodes/ep{NNN}.md` 或任意 .md 时，若检测到 `<!-- 剧本正文到此结束 -->` 边界标记，**只对边界之前的剧本正文拆镜头**，附录部分（考据引用表）不参与分镜。未检测到边界（老集数 v1.15.7 及之前）→ 按全文拆分（向后兼容）。
+**考据引用附录与 CONTINUITY 跳过（v1.15.8+ / Phase 1A）：** 读取 `episodes/ep{NNN}.md` 或任意 .md 时，若检测到 `<!-- 剧本正文到此结束 -->` 边界标记，**只对边界之前的剧本正文拆镜头**，附录部分（`CONTINUITY`、考据引用表）不参与分镜。未检测到边界（老集数 v1.15.7 及之前）→ 按全文拆分（向后兼容）。
 
 **镜头节奏：** 见 `references/storyboard-rules.md#动态镜头密度`
 
