@@ -8,16 +8,16 @@
 import sys
 from pathlib import Path
 
-try:
-    from docx import Document
-    from docx.shared import Pt, Cm
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-except ImportError:
-    print("[错误] 需要 python-docx: pip3 install python-docx", file=sys.stderr)
-    sys.exit(1)
-
 
 def create_reference_doc(output_path: str):
+    try:
+        from docx import Document
+        from docx.shared import Pt, Cm
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+    except ImportError:
+        print("[错误] 需要 python-docx: pip3 install python-docx", file=sys.stderr)
+        sys.exit(1)
+
     doc = Document()
 
     # --- 页面设置 (A4) ---
@@ -77,6 +77,10 @@ def create_reference_doc(output_path: str):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] in {"-h", "--help"}:
+        print("用法: python3 generate_reference_doc.py [输出路径]")
+        sys.exit(0)
+
     script_dir = Path(__file__).resolve().parent
     skill_dir = script_dir.parent
     default_output = skill_dir / "assets" / "drama-reference.docx"

@@ -1,3 +1,11 @@
+**v1.31.30**（2026-05-18）
+
+补齐 helper CLI 的 `--help` 契约：`export_docx.py` 与 `generate_reference_doc.py` 现在可在系统 Python 3.9 下直接查看帮助并返回 0，且 `generate_reference_doc.py --help` 不再依赖预装 `python-docx`。用户使用流程不变。
+
+输入 `/帮助` 查看全部命令
+
+---
+
 **v1.31.29**（2026-05-18）
 
 继续补齐系统 Python 3.9 兼容：`/角色卡` 校验脚本和分镜合并脚本不再使用 Python 3.10 才支持的 `| None` 类型注解。用户使用流程不变。

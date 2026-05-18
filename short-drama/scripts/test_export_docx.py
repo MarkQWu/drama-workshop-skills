@@ -107,6 +107,17 @@ def test_insufficient_args():
     assert_true("用法" in result.stdout, "stdout 含用法提示")
 
 
+def test_help_flag():
+    """--help：输出用法提示，exit 0"""
+    print("\n[TEST] --help")
+    result = subprocess.run(
+        [sys.executable, str(EXPORT_SCRIPT), "--help"],
+        capture_output=True, text=True,
+    )
+    assert_true(result.returncode == 0, "exit code 为 0", f"实际: {result.returncode}")
+    assert_true("用法" in result.stdout, "stdout 含用法提示")
+
+
 def test_chinese_filename():
     """中文文件名：正常生成"""
     print("\n[TEST] 中文文件名")
@@ -320,6 +331,7 @@ if __name__ == "__main__":
         test_normal_export_without_template,
         test_input_not_found,
         test_insufficient_args,
+        test_help_flag,
         test_chinese_filename,
         test_empty_file,
         test_large_file_50_episodes,
