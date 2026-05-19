@@ -71,6 +71,7 @@ for DEST in "${DESTINATIONS[@]}"; do
       --exclude='*.pyc' \
       --exclude='.maintainer/' \
       --exclude='.last-version-shown' \
+      --exclude='.mcp.json' \
       "$MASTER_DIR/" "$DEST/" | head -5
     continue
   fi
@@ -82,6 +83,7 @@ for DEST in "${DESTINATIONS[@]}"; do
     --exclude='*.pyc' \
     --exclude='.maintainer/' \
     --exclude='.last-version-shown' \
+    --exclude='.mcp.json' \
     "$MASTER_DIR/" "$DEST/"
 
   DEST_VERSION=$(cat "$DEST/VERSION" 2>/dev/null || echo "unknown")
