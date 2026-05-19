@@ -984,10 +984,12 @@ clashes/roundtables 按以下规则决定显示内容：
    「还没有 Key？免费注册获取：**wangwendashuju.com** → 登录后进入 **wangwendashuju.com/mcp** → 创建 Key → 复制（Key 以 `wwmcp_` 开头，首次赠 1000 Credits，5 月 31 日前有效）」
 2. 等用户粘贴 Key
 3. 校验格式：Key 必须以 `wwmcp_` 开头；不符合则提示「格式不对，Key 应以 wwmcp_ 开头，请重新复制」并重试
-4. 用 Edit 工具将 `{skill目录}/.mcp.json` 中 `X-MCP-API-Key` 的值从 `YOUR_KEY_HERE` 替换为用户提供的 Key
+4. 写入 Key——以下文件**都要更新**（用 Edit 工具逐一替换 `X-MCP-API-Key` 字段值）：
+   - `{skill目录}/.mcp.json`（必须，所有平台）
+   - `~/.workbuddy/mcp.json`（若文件存在则更新，WorkBuddy connector 注册表）
 5. 输出：「✅ 配置完成！请重启 WorkBuddy / Claude Code，重启后直接使用 /市场、/选题会、/策划 即可调用真实榜单数据。」
 
-**Key 已配置时：** 提示当前 Key 前 8 位，询问是否更换。
+**Key 已配置时：** 读取 `{skill目录}/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。
 
 ---
 
