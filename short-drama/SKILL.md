@@ -160,7 +160,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 **入口软提示（命令开始时执行）：** 检查 `.drama-state.json#clashes`——若为空，在生成方案前输出一句：「💡 还没开过选题会。建议先跑 `/选题会` 验证赛道（3 位专家碰撞，5 分钟）。直接继续请回复"继续"。」用户回复"继续"或任意命令则正常推进；`clashes` 非空则跳过此提示。
 
-**加载参考：** three-layer-control.md（按骨架层 75% 锁 story promise / main conflict / payoff / hook，释放具体实现）, opening-rules.md, paywall-design.md, rhythm-curve.md, satisfaction-matrix.md, creative-intent-ledger.md, **plot-types.md（"一句话故事线 + 核心冲突" 时从 40 种情节类型组合 2-5 个）**, **genre-guide.md（读选定题材的 `### anchor 参考` section，如有）**。若 `.drama-state.json#mode == "overseas"`，额外先读 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`anti-patterns.md`、`anti-domestic-transfer.md`、`anti-structure-import.md`、`compliance-risk.md`，并以海外分层资料覆盖国内策划模板。
+**加载参考：** three-layer-control.md（按骨架层 75% 锁 story promise / main conflict / payoff / hook，释放具体实现）, opening-rules.md, paywall-design.md, rhythm-curve.md, satisfaction-matrix.md, creative-intent-ledger.md, **plot-types.md（"一句话故事线 + 核心冲突" 时从 40 种情节类型组合 2-5 个）**, **genre-guide.md（读选定题材的 `### anchor 参考` section，如有）**。国内模式额外读取 commercial-ledger-cn.md（追踪观众买单理由、付费卡点账本、爽点兑现账本、反派压力轨迹）。若 `.drama-state.json#mode == "overseas"`，额外先读 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`anti-patterns.md`、`anti-domestic-transfer.md`、`anti-structure-import.md`、`compliance-risk.md`，并以海外分层资料覆盖国内策划模板，不读取、不套用国内商业账本。
 
 **anchor 推荐步骤（v1.23.0，全 13 题材触发）：** **生成内容前**按 `references/anchor-trigger.md#策划-anchor-推荐步骤` 执行推荐并写入 `creative-plan.md#anchor` 字段。
 
@@ -175,7 +175,8 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 7. **全剧节奏波形图**（国内）或 **paid-pressure map**（出海）
 8. **付费卡点规划**（国内）或 **paid-episode pressure range**（出海，不硬编码 EP10/11/20/30）
 9. **爽点矩阵**（国内，按 satisfaction-matrix.md 规划）或 **viewer-buy/payoff map**（出海）
-10. **结局设计**
+10. **商业账本**（国内，按 commercial-ledger-cn.md 写观众买单理由、付费卡点账本、爽点兑现账本、反派压力轨迹；出海使用 viewer-buy/payoff map，不输出国内账本）
+11. **结局设计**
 
 **选题会处方展示（增量，非阻断）：** 生成创作方案前，检查 `.drama-state.json#clashes`：若存在至少一条碰撞记录，Read 最新一份 `clashes/clash-*.md`，提取 `<!-- PRESCRIPTIONS -->` 块，在创作方案正文开头显示「📋 选题会处方（来自 {文件名}）」块，供方案生成时参考。无碰撞记录则跳过，不提示也不阻断。
 
@@ -373,7 +374,7 @@ graph LR
 
 **前置条件：** 已完成 /角色开发
 
-**加载参考：** three-layer-control.md（分集职责、阶段节奏、关键集和付费点归骨架层，集标题表达归血肉层）, paywall-design.md, rhythm-curve.md。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`anti-structure-import.md`、`anti-domestic-transfer.md`、`vertical-filmability.md`，并使用出海分集目录模板。
+**加载参考：** three-layer-control.md（分集职责、阶段节奏、关键集和付费点归骨架层，集标题表达归血肉层）, paywall-design.md, rhythm-curve.md。国内模式额外读取 commercial-ledger-cn.md（目录版账本）。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`anti-structure-import.md`、`anti-domestic-transfer.md`、`vertical-filmability.md`，并使用出海分集目录模板，不读取国内商业账本。
 
 **生成内容：**
 - 国内模式：为每一集生成条目：`第{N}集：{集标题}：{核心冲突/爽点一句话描述} {标记}`
@@ -386,6 +387,7 @@ graph LR
 **要求：**
 - 必须覆盖全部集数
 - 国内模式：前 10 集至少 3 个 [关键] 和 2 个 [付费]；全剧 [关键] 占比 25-35%，[付费] 占比 10-15%；目录必须体现三幕结构的节奏变化
+- 国内模式：每个 [关键] / [付费] 集必须在目录版商业账本中写明商业职责（推进主线 / 兑现爽点 / 升级反派压力 / 制造付费承诺至少命中一项）
 - 出海模式：不得使用三幕/爽点/固定付费卡点口径；按 opening pressure、relationship choice、reveal/reversal、paid-pressure cliffhanger 组织，每个 [PAY] 必须说明观众为什么付费继续看
 
 **输出格式：** 国内模式见 `references/output-templates.md#分集目录`；出海模式见 `references/output-templates.md#分集目录出海模式`
@@ -406,7 +408,7 @@ graph LR
 
 **前置条件：** 已完成 /分集目录
 
-**加载参考：** three-layer-control.md（锁本集 story job / entry pressure / turning point / exit hook，释放具体台词、动作和场面质感）, continuity-protocol.md（跨集剧情记忆、ledger 读写、尾钩义务承接）, opening-rules.md（**仅第 1 集 Read**，其他集跳过）, rhythm-curve.md, satisfaction-matrix.md, hook-design.md, quality-rules.md（跨介质通用规则 + 自检维度）, creative-intent-ledger.md（用于防止分集背离原始前提、核心关系和不可牺牲点）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, **setting-bible.md**（如存在，强制引用专业细节）, **used-lines.md**（存在则读，跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）, **continuity-ledger.md**（存在则读；不存在按 `continuity-protocol.md` 创建或 bootstrap）, **工艺通用补充**（按需读，覆盖中英文）：`vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏）/ `dramatic-truth.md`（对白真实性 4 症状）/ `dialogue-craft-cn.md`（中文对白三问：像这个人 / 有潜台词 / 可动作替代）/ `script-element-extraction.md`（5 类元素分层 pipeline）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单）
+**加载参考：** three-layer-control.md（锁本集 story job / entry pressure / turning point / exit hook，释放具体台词、动作和场面质感）, continuity-protocol.md（跨集剧情记忆、ledger 读写、尾钩义务承接）, opening-rules.md（**仅第 1 集 Read**，其他集跳过）, rhythm-curve.md, satisfaction-matrix.md, hook-design.md, quality-rules.md（跨介质通用规则 + 自检维度）, creative-intent-ledger.md（用于防止分集背离原始前提、核心关系和不可牺牲点）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, **setting-bible.md**（如存在，强制引用专业细节）, **used-lines.md**（存在则读，跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）, **continuity-ledger.md**（存在则读；不存在按 `continuity-protocol.md` 创建或 bootstrap）, **工艺通用补充**（按需读，覆盖中英文）：`vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏）/ `dramatic-truth.md`（对白真实性 4 症状）/ `dialogue-craft-cn.md`（中文对白三问：像这个人 / 有潜台词 / 可动作替代）/ `script-element-extraction.md`（5 类元素分层 pipeline）, **国内模式额外加载：** `commercial-ledger-cn.md`（核对本集买单理由、付费/尾钩压力、爽点兑现状态、反派压力变化）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
 
 **anchor inline + `--fix anchor-rhythm` 子命令：** 如 `creative-plan.md` 有 `anchor` 字段，按 `references/anchor-trigger.md#分集-anchor-inline` 把 anchor prompt 模板 inline 到分集生成 prompt；无 `anchor` 字段则跳过。节奏污染时 `/分集 N --fix anchor-rhythm` 重写（详见 `references/anchor-trigger.md#fix-anchor-rhythm-子命令`）。
 
@@ -419,6 +421,8 @@ graph LR
 **专业细节引用规则（bible 存在时强制）：** 详见 `references/quality-rules.md#考据可追溯性自检流程`。核心原则：所有专业术语/官名/制度/数字/药物剂量/法条必须映射到 bible，否则改模糊或标 `[虚构]`。
 
 **三层生成边界：** 生成时硬控地基层和骨架层，不把血肉层的具体台词、微动作、比喻数量、句式节奏写成固定模板。若血肉选择无法完成本集 `locked_episode_job`，先修骨架执行；若只是风格强弱，留给 `/自检` 或 `/圆桌诊断` 做建议。
+
+**商业账本对账（国内模式）：** 生成前读取 `creative-plan.md#商业账本` 和 `episode-directory.md` 的目录版商业职责；本集写完后在集末自查补齐本集买单理由、付费/尾钩压力、爽点兑现状态、反派压力变化。缺失时先补结构职责，不用空泛口号代替。
 
 **对白三问（生成时不输出过程）：** 每句关键对白生成前按 `dialogue-craft-cn.md` 过三问：① 是否只有这个角色会这么说；② 表面意思和真实意图是否不同；③ 能否用动作、道具、沉默替代。能替代就删对白，改成动作或沉默；不能删时再写成角色声音指纹内的句子。
 
@@ -501,7 +505,7 @@ graph LR
 
 **前置条件：** 目标集数已完成
 
-**加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, `dialogue-craft-cn.md`（中文对白 30% 删除 / 大声读 / 节奏扫描 / 潜台词补回）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单）
+**加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, `dialogue-craft-cn.md`（中文对白 30% 删除 / 大声读 / 节奏扫描 / 潜台词补回）, **国内模式额外加载：** `commercial-ledger-cn.md`（把买单理由缺失、付费承诺漂移、爽点未兑现、反派压力不升级归入商业生命力诊断）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
 
 **支持格式：** `/自检 5` | `/自检 1-10` | `/自检 all` | `/自检 5 --fix`
 
