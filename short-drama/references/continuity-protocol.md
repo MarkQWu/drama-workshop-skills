@@ -218,6 +218,112 @@ characters.md + continuity-ledger.md + 目标集正文
 
 `CONTINUITY` 和考据附录一样跳过，不进入镜头拆分、prompt 汇总或合并分镜。
 
+## ledger 归档协议（v1.32.0 新增 · 活跃/归档双层）
+
+### 设计目标
+
+`continuity-ledger.md` 的"分集索引"section 每集追加一行，"活跃主线伏笔"中 paid_off 条目也长期保留。到第 50 集，ledger 已超 4,000 词，全量读入代价过高。归档协议将活跃层稳定在 ~200 行（~2,500 tokens），不受集数影响。
+
+### 三个 section 的归档策略
+
+| Section | 归档策略 |
+|---|---|
+| **角色动态状态** | **永不归档**——角色全局状态必须始终在活跃层 |
+| **活跃主线伏笔** | 状态为 `paid_off` 或 `archived` 的条目，每 10 集批量移出 |
+| **分集索引** | 只保留最近 10 集详细行，更早集数压缩为一行归档摘要 |
+
+### 触发条件
+
+`/分集 N` 更新 ledger **之前**，检查"分集索引"section 的行数（含表头）：
+
+- 分集索引行数 **≤ 15**（含表头 2 行，即实际集数 ≤ 13）：不归档，正常更新
+- 分集索引行数 **> 15**（实际集数 > 13）：先执行归档，再更新本集
+
+### 归档执行步骤
+
+```
+1. Read continuity-ledger.md                     # 获取全部内容
+
+2. 处理"分集索引" section：
+   归档范围 = ep001 ~ ep(N-10)                   # 保留最近 10 集在活跃层
+   保留范围 = ep(N-9) ~ ep(N-1)
+
+3. 处理"活跃主线伏笔" section：
+   归档条目 = 状态为 paid_off 或 archived 的全部行
+
+4. 若 continuity-ledger-archive.md 不存在 → 创建（含标准文件头）
+5. Read continuity-ledger-archive.md             # 避免覆盖已有归档
+
+6. 将步骤 2 的归档范围追加到 archive 文件的 "## 分集索引（归档）" section
+7. 将步骤 3 的归档条目追加到 archive 文件的 "## 已回收伏笔（归档）" section
+
+8. 重写 continuity-ledger.md（活跃层）：
+   - 角色动态状态：完整保留，不变
+   - 活跃主线伏笔：只保留 active / reinforced 状态行；在 section 末尾追加：
+       > ⚡ paid_off/archived 伏笔已归档至 continuity-ledger-archive.md（{K} 条）
+   - 分集索引：删除归档范围，保留最近 10 集；在表格前插入归档摘要行：
+       | ep001–ep{N-10} | 已归档，见 continuity-ledger-archive.md | — | — | — |
+```
+
+### continuity-ledger-archive.md 格式
+
+```markdown
+# 连续性台账（归档层）
+
+> 本文件为 continuity-ledger.md 的归档层，由 /分集 命令触发时自动追加。
+> 禁止手动修改已有内容。用于 /自检 --deep 或历史查证时按需读取。
+
+## 分集索引（归档）
+
+| 集数 | 核心事件 | 事实变化 | 尾钩或下一集义务 | 主线伏笔变化 |
+|---:|---|---|---|---|
+| 1 | ... | ... | ... | ... |
+...
+
+## 已回收伏笔（归档）
+
+| ID | 内容 | 埋设集 | 处理方式 | 关联角色 | 状态 |
+|---|---|---:|---|---|---|
+...
+```
+
+### 归档后活跃层样例（第 50 集时）
+
+```markdown
+# 连续性台账
+
+> 由 /分集 自动维护。...
+
+## 角色动态状态
+（完整保留，不变）
+
+## 活跃主线伏笔
+| ID | 内容 | ... | 状态 |
+|...|...|...|...|
+| F-012 | 玉佩真相 | ... | active |
+| F-015 | 幕后黑手身份 | ... | reinforced |
+> ⚡ paid_off/archived 伏笔已归档至 continuity-ledger-archive.md（8 条）
+
+## 分集索引
+| 集数 | 核心事件 | ... |
+|---:|...|...|
+| ep001–ep040 | 已归档，见 continuity-ledger-archive.md | — | — | — |
+| 41 | ... | ... | ... | ... |
+...
+| 49 | ... | ... | ... | ... |
+```
+
+### 与 /自检 的关系
+
+- 正常 `/自检 N`：只读活跃层（continuity-ledger.md），检查近 10 集连续性
+- `/自检 N --deep`（用户显式要求）：额外 Read continuity-ledger-archive.md，做全剧伏笔闭环扫描
+- 归档不影响"无事件触发改写已确认事实"的 hard gate——该检查依赖 `characters.md` 和 `creative-plan.md`，与 ledger 归档无关
+
+### 向后兼容
+
+- 老项目 ledger 超过 13 集但未归档：下次 `/分集` 时触发一次性归档，不中断写作流程
+- 老项目 bootstrap 产生的 ledger：如分集索引已超出限制，bootstrap 完成后立即触发一次归档
+
 ## 失败处理
 
 | 失败 | 处理 |
@@ -228,3 +334,4 @@ characters.md + continuity-ledger.md + 目标集正文
 | ledger 与正文冲突 | 以正文证据为准，要求修 ledger 或修正文，不得静默覆盖 |
 | `/导出` 误含 `CONTINUITY` | 先查边界位置和单集导出临时文件逻辑 |
 | `/分镜` 误拆 `CONTINUITY` | 先查正文边界剥离说明 |
+| 归档后 archive 文件不存在 | 重新执行归档协议，不跳过 |

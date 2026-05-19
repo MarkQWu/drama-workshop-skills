@@ -479,10 +479,13 @@ graph LR
 - N ≤ 10 可读全部已完成正文；N > 10 不默认读全部历史正文，改读 ledger + 上一集全文 + 近 2-3 集 `CONTINUITY` / 分集索引，必要时按伏笔证据精确读取远期正文。
 - 生成中出现身份、关键道具、隐瞒、主线反转、付费承诺、关系转折前置线索时，必须写入本集 3 字段 `CONTINUITY`。
 - 生成后按 Read-Modify-Write 更新 `continuity-ledger.md`，再更新 `.drama-state.json#completedEpisodes`。批量 `/分集 5-8` 时，每写完一集先更新 ledger，再写下一集。
+- **更新前触发归档检查（v1.32.0）：** 更新 ledger 前检查其"分集索引"section 实际行数：若 **> 15 行**（实际集数 > 13），先按 `references/continuity-protocol.md#ledger-归档协议` 执行归档（活跃伏笔中 paid_off/archived 条目移出，分集索引保留最近 10 集 + 1 行归档摘要），再写入本集；若 **≤ 15 行** 直接更新，无需归档。
 
 **输出：** 保存为 `episodes/ep{NNN}.md`（三位数补零）
 
 **写完后强制追加 used-lines.md（跨集台词去重）：** 本集保存后，提取 3-5 条"高复读风险台词"（情绪锚句 / 遗言告别 / 口头禅 / 3 字以上标志性形容词组合 / 特殊意象），按 Read-Modify-Write 协议追加到 `used-lines.md` 新 section `## ep{NNN}`。格式：`- "台词原文" [角色][场景 one-liner][类别]`。**硬下限 3 条**，少于 3 条视为未执行。详细判定标准/反模式见 `references/used-lines-protocol.md#写入规则`。
+
+**追加前触发归档检查（滑动窗口，v1.32.0）：** 追加前先统计 `used-lines.md` 中 `## ep` section 数量：若 **> 15**，先按 `references/used-lines-protocol.md#归档协议` 执行归档（将最早的 ep001~ep(N-10) 移至 `used-lines-archive.md`，活跃层保留最近 10 集），再追加本集；若 **≤ 15** 直接追加，无需归档。
 
 **结束提示：**
 - **N < totalEpisodes（非最后一集）：** `[完成] 第{N}集已保存！输入 /分集 {N+1} 继续，或 /自检 {N} 检查质量`
