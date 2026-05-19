@@ -43,6 +43,7 @@ Chinese control names:
 |---|---|
 | `anchor-library.md` | Genre anchor examples and emotional reference pool |
 | `anchor-trigger.md` | Anchor activation logic for planning and episodes |
+| `commercial-ledger-cn.md` | Domestic commercial ledger for viewer-buy reason, paid hook pressure, payoff delivery, and villain escalation |
 | `creative-intent-ledger.md` | `control=creative_guidance`; original premise, core relationship, satisfaction engine, ending preference, and non-negotiables |
 | `genre-guide.md` | Genre taxonomy, audience fit, and configuration choices |
 | `hook-design.md` | Episode-ending hook types and placement strategy |
