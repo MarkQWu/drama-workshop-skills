@@ -13,7 +13,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 ## 快速入门
 
-用户第一次咨询"怎么用/从哪开始"时，引导使用 `/使用说明`（完整图文教程）或 `/帮助`（命令速查）。命令完整清单见 output-templates.md#帮助，不在此重复。
+用户第一次咨询"怎么用/从哪开始"时，引导使用 `/使用说明`（完整图文教程）或 `/帮助`（命令速查）。命令完整清单见 output-templates-aux.md#帮助，不在此重复。
 
 ## 工作目录
 
@@ -25,7 +25,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 ## 参考资料
 
-所有方法论和模板位于 `references/` 目录。执行命令时按各命令定义中的「加载参考」字段读取对应文件；所有命令的输出格式模板统一在 `references/output-templates.md`。完整文件清单执行 `ls references/` 或见 git 仓库。
+所有方法论和模板位于 `references/` 目录。执行命令时按各命令定义中的「加载参考」字段读取对应文件；所有命令的输出格式模板拆为两文件：`references/output-templates-core.md`（主创作流程）和 `references/output-templates-aux.md`（辅助命令）。完整文件清单执行 `ls references/` 或见 git 仓库。
 
 ---
 
@@ -116,7 +116,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
    **配置选项列表和题材→推荐映射表：** 见 `genre-guide.md#配置选项列表` 和 `genre-guide.md#题材推荐配置映射表`。
 
-**输出格式：** 见 `references/output-templates.md#开始`
+**输出格式：** 见 `references/output-templates-core.md#开始`
 
 **结束提示：**
 ```
@@ -158,7 +158,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 **选题会处方展示（增量，非阻断）：** 生成创作方案前，检查 `.drama-state.json#clashes`：若存在至少一条碰撞记录，Read 最新一份 `clashes/clash-*.md`，提取 `<!-- PRESCRIPTIONS -->` 块，在创作方案正文开头显示「📋 选题会处方（来自 {文件名}）」块，供方案生成时参考。无碰撞记录则跳过，不提示也不阻断。
 
-**输出格式：** 国内模式见 `references/output-templates.md#策划`；出海模式见 `references/output-templates.md#策划出海模式`
+**输出格式：** 国内模式见 `references/output-templates-core.md#策划`；出海模式见 `references/output-templates-core.md#策划出海模式`
 
 **输出：** 保存为 `creative-plan.md`
 
@@ -280,12 +280,12 @@ MCP 不可用或用户跳过时，直接走内置方法论；方案末尾追加�
 **选题会流程（4 轮）：**
 
 - **Round 0（主持人破冰）：** 主持人简述当前选题方向，提出核心辩题（如「这个题材的核心爽点机制是否已过饱和？」）。
-- **Round 1（首轮各抒己见）：** A → B → ⭐ 顺序，**每位发言必须有建设性论据支撑，长度不限，但必须聚焦**。**每位必须回应上一位的核心论点**，不能自说自话。B-派从批评视角质疑 A-派的执行取向，⭐意外视角用跨域框架重新诠释前两位的争论。**排版格式按 `output-templates.md#选题会` 模板执行**（含视觉分隔符和「🔑 核心论断」callout）。
+- **Round 1（首轮各抒己见）：** A → B → ⭐ 顺序，**每位发言必须有建设性论据支撑，长度不限，但必须聚焦**。**每位必须回应上一位的核心论点**，不能自说自话。B-派从批评视角质疑 A-派的执行取向，⭐意外视角用跨域框架重新诠释前两位的争论。**排版格式按 `output-templates-aux.md#选题会` 模板执行**（含视觉分隔符和「🔑 核心论断」callout）。
 - **Round 2（交叉质询）：** 每人向另一位提一个尖锐问题（共 3 组），对方必须回答。问题须有「你说 X，但 Y 怎么办」具体结构。
 - **Round 3（最终立场）：** 每人 1-2 句，给出最终判断：这个选题值得做吗？如果做，最关键的一个创作决策是什么？
 
 **主持人综合：**
-- 处方列表（3-5 条）：每条处方必须包含三个字段——**风险类型**（⚖️ 稳妥型：现有结构内微调 / 🎯 中规中矩：修改某一结构层 / ⚡ 冒险型：改变核心方向）、**解决问题**（一句话说明处方针对的核心矛盾）、**选用理由**（在什么情况下选这条，≤20字）。格式见 `references/output-templates.md#选题会`
+- 处方列表（3-5 条）：每条处方必须包含三个字段——**风险类型**（⚖️ 稳妥型：现有结构内微调 / 🎯 中规中矩：修改某一结构层 / ⚡ 冒险型：改变核心方向）、**解决问题**（一句话说明处方针对的核心矛盾）、**选用理由**（在什么情况下选这条，≤20字）。格式见 `references/output-templates-aux.md#选题会`
 - 关键争议未决点（0-2 条）
 
 **Mermaid 张力图（`mermaid@10.9.0`，附文字 fallback）：**
@@ -297,7 +297,7 @@ graph LR
   C -- "..." --> A
 ```
 
-**输出格式：** 见 `references/output-templates.md#选题会`
+**输出格式：** 见 `references/output-templates-aux.md#选题会`
 
 **对话框摘要输出（文件存完整讨论，对话框只输出摘要）：**
 完整 Round 0-3 内容写入文件，对话框仅输出：
@@ -309,7 +309,7 @@ graph LR
 
 **文件管理：**
 - 保存为 `clashes/clash-{YYYYMMDD-HHMM}.md`（如 `clashes/clash-20260501-1430.md`）；`.md` 正文末尾张力图 hint 行 `{文件名}` 同样替换为实际文件名基名
-- 同时生成 `clashes/clash-{YYYYMMDD-HHMM}.html`：纯 HTML+SVG，零外部依赖，双击即可在浏览器查看张力图（完全离线可用）。HTML 结构见 `references/output-templates.md#选题会-HTML`；`.html` 文件仅含可视化图表，不写 PRESCRIPTIONS 块
+- 同时生成 `clashes/clash-{YYYYMMDD-HHMM}.html`：纯 HTML+SVG，零外部依赖，双击即可在浏览器查看张力图（完全离线可用）。HTML 结构见 `references/output-templates-aux.md#选题会-HTML`；`.html` 文件仅含可视化图表，不写 PRESCRIPTIONS 块
 - 文件头写入机器可读处方块：`<!-- PRESCRIPTIONS: 处方1|处方2|处方3 -->`（仅 `.md` 文件头，`.html` 不写）
 - 更新 `.drama-state.json#clashes[]`：追加 `{"file": "clashes/...", "topic": "会议主题一句话", "timestamp": "YYYY-MM-DD HH:MM"}`
 
@@ -360,7 +360,7 @@ MCP 不可用或用户跳过时，继续使用内置方法论；选题会末尾�
 8. **关键互动场景预设**（第一次冲突、身份揭露、感情转折、终极对决）
 9. **反派体系**（按 villain-design.md 的4层结构）
 
-**输出格式：** 见 `references/output-templates.md#角色开发`
+**输出格式：** 见 `references/output-templates-core.md#角色开发`
 
 **输出：** 保存为 `characters.md`
 
@@ -380,7 +380,7 @@ MCP 不可用或用户跳过时，继续使用内置方法论；选题会末尾�
 
 **加载参考：** three-layer-control.md（事实可追溯和 bible scope 属地基层，命中编造事实即阻断）, research-guide.md（方法论必读，含双通道 query / 权威源加权 / 反模式 / 完整流程）, setting-bible-template.md, research-fallback.md, short-dynasties.md, genre-guide.md
 
-**输出格式：** 见 `references/output-templates.md#考据`
+**输出格式：** 见 `references/output-templates-aux.md#考据`
 
 **输出：** `setting-bible.md` + `research-cache/`（auto 模式）+ 更新 `.drama-state.json` 的 `settingBibleStatus`/`bibleScope`（按 `project-management.md#state-写入协议` Read-Modify-Write）
 
@@ -410,7 +410,7 @@ MCP 不可用或用户跳过时，继续使用内置方法论；选题会末尾�
 - 国内模式：分集目录仍先写清剧情推进；每一集都必须在目录版商业账本中写明主商业职责（推进主线 / 兑现爽点 / 升级反派压力 / 制造付费承诺至少命中一项）和可选副职责，[关键] / [付费] 集必须更具体，避免只列事件不说明留存/付费功能
 - 出海模式：不得使用三幕/爽点/固定付费卡点口径；按 opening pressure、relationship choice、reveal/reversal、paid-pressure cliffhanger 组织，每个 [PAY] 必须说明观众为什么付费继续看
 
-**输出格式：** 国内模式见 `references/output-templates.md#分集目录`；出海模式见 `references/output-templates.md#分集目录出海模式`
+**输出格式：** 国内模式见 `references/output-templates-core.md#分集目录`；出海模式见 `references/output-templates-core.md#分集目录出海模式`
 
 **输出：** 保存为 `episode-directory.md`
 
@@ -485,7 +485,7 @@ MCP 不可用或用户跳过时，继续使用内置方法论；选题会末尾�
   2. Step 2 按清单逐场展开（△ 分镜 + 对白 + OS/VO 情绪标签 + 场景头用 `N-N日/外或内 地点` 格式）。
   3. JSON 解析失败容错：重试 1 次 → 仍失败则 fallback 到自由文本 + 强 prompt 提醒 "≤3 场 · 严格分场头格式"，自检后必须复审。
 
-**输出格式：** 见 `references/output-templates.md#分集国内模式`（或 `#分集出海模式`）
+**输出格式：** 见 `references/output-templates-core.md#分集国内模式`（或 `#分集出海模式`）
 
 **质量要求：** 见 `references/quality-rules.md#分集质量要求`
 
@@ -547,7 +547,7 @@ MCP 不可用或用户跳过时，继续使用内置方法论；选题会末尾�
 | 对白格式合规 | 硬约束 | 按 `.drama-state.json#scriptFormat` 分化：`cn-shortdrama` 或缺失时扫全文对白是否含双引号；`hollywood` 时反向检查对白必须含双引号 | 违反 → 标【严重】不计入总分但阻断 /导出，提示修复 |
 | 破折号禁用 | 硬约束 | 统计**剧本正文**中 `——` / `—` / `--` 出现次数（排除 `>` 引用块 / `<!-- ... -->` HTML 注释 / 前情提要引用 / 集末自查 / 本集考据引用附录等元信息段）| 0 次合规；≥1 次 → 标【严重】并要求改写；用动作描写、换对话轮次、完整句、句号、逗号或中文省略号「…」替代 |
 
-**输出/流程：** 输出格式 `output-templates.md#自检`；`--fix` 模式 + 分数持久化见 `quality-rules.md`。
+**输出/流程：** 输出格式 `output-templates-core.md#自检`；`--fix` 模式 + 分数持久化见 `quality-rules.md`。
 
 **评分标准：** 总分动态——厚型/中型 80（含第 8 维度），轻型 70（第 8 维度 N/A）。完整阈值+过稿预估见 `quality-rubric.md#评分标准与平台过稿预估`。
 
@@ -636,15 +636,15 @@ MCP 不可用或用户跳过时，继续使用内置方法论；选题会末尾�
 **诊断流程（4 轮）：**
 
 - **Round 0（主持人破题）：** 主持人展示本集质检摘要（总分 / 最低分维度 / 最高分维度），提出核心诊断问题。
-- **Round 1（各自初判）：** A → B → ⭐ 顺序，从自身框架出发初步诊断本集，**长度不限，但必须有建设性论据**。**每位必须回应上一位的核心论点**，不能自说自话。⭐意外视角用跨域框架命名问题。**排版格式按 `output-templates.md#圆桌诊断` 模板执行**（含视觉分隔符和「🔑 核心判断」callout）。
+- **Round 1（各自初判）：** A → B → ⭐ 顺序，从自身框架出发初步诊断本集，**长度不限，但必须有建设性论据**。**每位必须回应上一位的核心论点**，不能自说自话。⭐意外视角用跨域框架命名问题。**排版格式按 `output-templates-aux.md#圆桌诊断` 模板执行**（含视觉分隔符和「🔑 核心判断」callout）。
 - **Round 2（修改方向分歧）：** 每人提出自己优先修改的维度（不能完全相同），说明理由（1-2 句）。产生观点冲突时双方互相质疑一轮。
 - **Round 3（最终处方）：** 每人给出 1-2 条具体可执行的修改建议——必须是动作句，不是方向性表述（如「第 2 场第 3 句台词把'你为什么这么做'改成有具体指向的指责」）。
 
 **主持人综合：**
-- 处方列表（3-5 条）：每条处方必须包含三个字段——**风险类型**（⚖️ 稳妥型：微调某句台词/细节 / 🎯 中规中矩：重写某场景或 1-3 集内容 / ⚡ 冒险型：推倒重来某幕或整体重构）、**解决问题**（一句话说明处方针对的核心问题）、**选用理由**（在什么情况下选这条，≤20字）。格式见 `references/output-templates.md#圆桌诊断`
+- 处方列表（3-5 条）：每条处方必须包含三个字段——**风险类型**（⚖️ 稳妥型：微调某句台词/细节 / 🎯 中规中矩：重写某场景或 1-3 集内容 / ⚡ 冒险型：推倒重来某幕或整体重构）、**解决问题**（一句话说明处方针对的核心问题）、**选用理由**（在什么情况下选这条，≤20字）。格式见 `references/output-templates-aux.md#圆桌诊断`
 - 诊断焦点（1 句话：这集最核心的问题是什么）
 
-**输出格式：** 见 `references/output-templates.md#圆桌诊断`
+**输出格式：** 见 `references/output-templates-aux.md#圆桌诊断`
 
 **对话框摘要输出（文件存完整讨论，对话框只输出摘要）：**
 完整 Round 0-3 内容写入文件，对话框仅输出：
@@ -706,7 +706,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **Step 3：综合输出**
 
-格式见 `references/output-templates.md#角色一致性`
+格式见 `references/output-templates-core.md#角色一致性`
 
 **结束提示：** `[完成] 角色一致性报告已生成。【严重】项请修改对应集数后重跑 /自检 验证。`
 
@@ -746,7 +746,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **完整执行协议（梗概综合 / 人物小传 / hash 规范化 / 考据附录剥离）：** 读取 `references/export-protocol.md`。
 
-**输出格式：** 见 `references/output-templates.md#导出`
+**输出格式：** 见 `references/output-templates-aux.md#导出`
 
 **Word 导出流程：** 调用 `python3 {skill目录}/scripts/export_docx.py "export/{剧名}-完整剧本.md" "export/{剧名}-完整剧本.docx"`，脚本自动检测/安装 pandoc（brew/winget/choco/apt），失败时输出手动安装指引。
 
@@ -814,7 +814,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **检查内容：** 国内模式检查红线检测、高风险内容、短剧特有雷区、正向价值观；出海模式检查目标市场缺失、IP/相似性、真实人物/AI 肖像、source-market transplant、protected-class harm、consent/violence breach、敏感机构误用和需人工 review 的地域/法律/宗教/政治风险。
 
-**输出格式：** 见 `references/output-templates.md#合规`
+**输出格式：** 见 `references/output-templates-aux.md#合规`
 
 **输出：** 保存为 `compliance-report.md`
 
@@ -837,7 +837,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **Prompt 前缀要求：** 15-40 词中文，只写可直接拍摄的外观特征，不写性格/情绪/背景
 
-**输出格式：** 见 `references/output-templates.md#角色卡`
+**输出格式：** 见 `references/output-templates-aux.md#角色卡`
 
 **更新 `.drama-state.json`：** 将角色名加入 `characterCardsGenerated` 数组（按 `project-management.md#state-写入协议` Read-Modify-Write）
 
@@ -865,7 +865,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **处理流程：** 见 `references/storyboard-rules.md#处理流程`
 
-**输出格式：** 见 `references/output-templates.md#分镜`（含分镜表 + Prompt 汇总 + 景别分布报告）
+**输出格式：** 见 `references/output-templates-aux.md#分镜`（含分镜表 + Prompt 汇总 + 景别分布报告）
 
 **Prompt 质量自检：** 见 `references/storyboard-rules.md#prompt-质量自检生成后自动执行`
 
@@ -883,7 +883,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **功能：** 打印完整创作→视频全链路说明。极轻量，不读取任何文件。
 
-**输出：** 见 `references/output-templates.md#工作流`
+**输出：** 见 `references/output-templates-aux.md#工作流`
 
 ---
 
@@ -944,7 +944,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **前置条件：** 已有活跃项目（`/开始` 选过或 mtime fallback 加载，**不依赖 cwd**）。
 
-**输出格式：** 见 `references/output-templates.md#README`
+**输出格式：** 见 `references/output-templates-aux.md#README`
 
 **圆桌统计（增量追加到 README）：** 生成 README 时，同步读取 `.drama-state.json#clashes` 和 `#roundtables`，在 README 末尾追加统计块：
 ```
@@ -1010,7 +1010,7 @@ clashes/roundtables 按以下规则决定显示内容：
    - 未指定 → 默认红果短剧
 2. 先读对应 `resource://domain-video` 或 `resource://domain-novel` 获取表结构，再按时间范围构造查询
 
-**输出固定结构：** 见 `references/output-templates.md#市场`（6 板块：榜单速览 / 题材分布 / 人设热力 / 金手指 / 改编信号 / 操盘建议）
+**输出固定结构：** 见 `references/output-templates-aux.md#市场`（6 板块：榜单速览 / 题材分布 / 人设热力 / 金手指 / 改编信号 / 操盘建议）
 
 **结束提示：** `[完成] 市场报告已生成 | 想深入某个赛道？输入 /选题会 [题材] 召集专家碰撞`
 
@@ -1020,7 +1020,7 @@ clashes/roundtables 按以下规则决定显示内容：
 
 **功能：** 显示所有命令速查。
 
-**执行（严格）**：**Read `{skill目录}/references/output-templates.md`** → 提取 `## /帮助` 段内的代码块 → verbatim 完整输出。**禁止**凭记忆用 SKILL.md "快速入门" 段拼凑、禁止自行增删命令条目、禁止改写说明文字。
+**执行（严格）**：**Read `{skill目录}/references/output-templates-aux.md`** → 提取 `## /帮助` 段内的代码块 → verbatim 完整输出。**禁止**凭记忆用 SKILL.md "快速入门" 段拼凑、禁止自行增删命令条目、禁止改写说明文字。
 
 ---
 
