@@ -59,6 +59,7 @@ Chinese control names:
 | Reference | Primary role |
 |---|---|
 | `dramatic-truth.md` | Dialogue truth, anti-trailer-speak, and polish audit |
+| `dialogue-craft-cn.md` | Chinese dialogue voice fingerprint, subtext, deletion-first fixes |
 | `quality-rubric.md` | `control=soft_rubric + commercial_vitality_rubric + anti_greenlight`; hard-gate overlay only for OOC, compliance, unfilmable output, medium mismatch, or factual contradiction |
 | `quality-rules.md` | Quality constraints and recurring failure patterns |
 | `realism-checklist.md` | Plausibility, causality, and grounded behavior checks |
