@@ -1,0 +1,11 @@
+{
+  "called_nodes": ["script_draft.preflight"],
+  "checker_call_log_contains": ["market_adaptation_report_validity"],
+  "consumed_report_ids": [
+    "source_integrity_report",
+    "reference_mapping_report",
+    "fact_gate_report",
+    "market_adaptation_report"
+  ],
+  "forbidden_full_node_calls_not_present": ["script_draft.generate"]
+}

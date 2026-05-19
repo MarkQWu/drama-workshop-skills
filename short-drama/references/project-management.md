@@ -39,6 +39,7 @@ read_when: /开始, /新建, /分集, /自检, and any command that reads or wri
 ├── research-cache/           # /考据 auto 检索原始缓存
 ├── episode-directory.md      # 分集目录
 ├── used-lines.md             # 跨集台词去重清单（/分集 自动追加 + /自检 扫描）
+├── continuity-ledger.md       # 连续性台账（/分集 自动创建/维护）
 ├── episodes/                 # 分集剧本
 │   ├── ep001.md
 │   ├── ep002.md
@@ -286,6 +287,7 @@ json.dump({"currentStep": "创作方案", "genre": ["古装"]}, open(path, "w"))
 | `characters.md` | 角色档案 |
 | `setting-bible.md` | 考据 bible |
 | `episode-directory.md` | 分集目录 |
+| `continuity-ledger.md` | 连续性台账 |
 | `compliance-report.md` | 合规报告 |
 | `README.md` | 项目自述（/项目状态 生成的才 mv，项目目录里其他同名 README.md 谨慎）|
 | `episodes/` | 分集剧本目录 |
@@ -295,6 +297,14 @@ json.dump({"currentStep": "创作方案", "genre": ["古装"]}, open(path, "w"))
 | `export/` | 导出目录 |
 
 **白名单外**（例 SKILL.md、scripts/、references/、LICENSE 等 skill 源文件，或用户桌面其他文件）→ **绝不移动**。
+
+## 状态类协议边界
+
+| 文件 | 职责 |
+|---|---|
+| `project-management.md` | 项目状态、目录结构、迁移白名单、state Read-Modify-Write |
+| `used-lines-protocol.md` | 表达记忆，管理已用高复读风险台词和 callback 复用 |
+| `continuity-protocol.md` | 剧情记忆，管理角色动态状态、活跃主线伏笔、分集索引和尾钩义务 |
 
 **迁移前强制用户确认**：LLM 列出待 mv 的具体文件清单（包括跳过的非白名单文件）+ 目标路径 + state 变更（补 `projectName` 字段），让用户回复 "确认" 后才执行。
 

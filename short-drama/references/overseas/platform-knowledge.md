@@ -102,12 +102,12 @@
 
 ---
 
-## 9. Episode file conventions (standard)
+## 9. Episode file conventions (content vs delivery)
 
-- Standard Hollywood master-scene format. Machine-executable spec: `scripts/format-deliverable.py`.
-- Start with `COLD OPEN` then `FADE IN:` — no recap, no pre-roll.
-- End with `SMASH CUT TO BLACK.` or `CUT TO BLACK.`
-- `(SFX: xxx)` and `(MUSIC: xxx)` cues are suggestions for sound designer, tied to visible action.
+- Overseas mode controls story content, platform pressure, genre promise, runtime, and cultural/compliance adaptation. It does **not** by itself require English output or Hollywood master-scene delivery.
+- Default creator-facing delivery is Chinese short-drama format: Chinese scene/action/dialogue text, English character names, and platform concepts retained when useful.
+- English submission delivery is opt-in only (`scriptFormat=hollywood` / explicit English delivery request). In that case, use Hollywood master-scene conventions. Machine-executable spec: `scripts/format-deliverable.py`.
+- For English submission delivery only: start with `COLD OPEN` then `FADE IN:`; end with `SMASH CUT TO BLACK.` or `CUT TO BLACK.`; `(SFX: xxx)` and `(MUSIC: xxx)` cues are suggestions for sound designer, tied to visible action.
 
 ---
 

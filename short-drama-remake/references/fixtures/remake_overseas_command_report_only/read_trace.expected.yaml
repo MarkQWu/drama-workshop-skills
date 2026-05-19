@@ -1,0 +1,18 @@
+{
+  "required_reads": [
+    "01_skeleton/reference-skeleton.md",
+    "02_concepts/selected-concept.md",
+    "references/market/layer-taxonomy.md",
+    "references/market/overseas-remake-rules.md",
+    "references/market/overseas-adaptation-map.md",
+    "references/market/overseas-risk-gate.md"
+  ],
+  "forbidden_reads_not_present": [
+    "short-drama/references/overseas/hard-rules.md",
+    "short-drama/references/overseas/anti-patterns.md",
+    "short-drama/references/overseas/dialogue-craft.md",
+    "short-drama/references/overseas/platform-knowledge.md",
+    "05_scripts/episodes/ep001.md"
+  ],
+  "episode_script_created": false
+}

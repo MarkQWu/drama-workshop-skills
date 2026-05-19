@@ -89,7 +89,7 @@ Q3: 这个场景提供什么 TikTok 广告帧？
 
 ```
 INT./EXT. [LOCATION, SPECIFIC] - DAY/NIGHT
-[WIDE SHOT — 建立世界观元素：典故词/品牌/家族继承符号]
+[VISUAL ANCHOR — 建立世界观元素：典故词/品牌/家族继承符号]
 [MEDIUM SHOT — 人物动作]
 [CLOSE-UP — 情绪爆点 / money shot]
 ```

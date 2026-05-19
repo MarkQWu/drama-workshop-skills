@@ -9,6 +9,7 @@ report_status_by_report_type:
       - source_integrity_report
       - reference_mapping_report
       - fact_gate_report
+      - market_adaptation_report
       - preflight_report
       - similarity_risk_report
       - llm_review_report
@@ -61,6 +62,12 @@ blocker_contract:
       - READ_ORDER_MISMATCH
       - FORBIDDEN_DIRECT_RESEARCH_NOTES_READ
       - OPEN_RISK_BLOCKS_SCRIPT
+      - MARKET_ADAPTATION_MISSING_OR_STALE
+      - TARGET_MARKET_MISMATCH
+      - MARKET_RULE_BLOCKED
+      - FOUNDATION_LAYER_BLOCKED
+      - SKELETON_LAYER_BLOCKED
+      - BLOOD_LAYER_HARD_GATE_FORBIDDEN
 
 source_integrity_report:
   schema_version: remake.source_integrity_report.v1
@@ -106,6 +113,32 @@ fact_gate_report:
     - omit
   direct_fact_requires_decision_id: true
 
+market_adaptation_report:
+  schema_version: remake.market_adaptation_report.v1
+  artifact_class: machine_report
+  report_status: [passed, blocked, stale]
+  required_fields:
+    - source_market
+    - target_market
+    - layer_classification
+    - reference_function_map
+    - source_market_mechanism_map
+    - target_market_replacement_map
+    - must_not_carry_over
+    - overseas_genre_promise
+    - paywall_pressure
+    - distance_check
+    - transferable_story_functions
+    - must_replace_market_specifics
+    - target_market_constraints
+    - remake_distance_notes
+    - blockers
+    - warnings
+  applies_before:
+    - project_bible
+    - execution_card
+    - episode_script
+
 preflight_report:
   schema_version: remake.preflight_report.v1
   artifact_class: machine_report
@@ -116,9 +149,11 @@ preflight_report:
     - fact_gate_report
     - source_integrity_report
     - reference_mapping_report
+    - market_adaptation_report when target_market == overseas or target_market != source_market
   required_sections:
     - planned_read_manifest
     - read_guard_policy
+    - three_layer_control_boundary
     - blockers
     - warnings
 
@@ -140,6 +175,7 @@ postflight_report:
     - read_trace_diff
     - risk_recheck
     - sync_check
+    - memorable_moment_check
     - blocking_summary
   status_fields:
     quality_gate_status: [passed, blocked, needs_revision]
@@ -160,4 +196,5 @@ postflight_report:
     - read_trace_diff.clean == true
     - risk_recheck.status == passed
     - sync_check.status == passed
+    - memorable_moment_check.status == passed
   downstream_must_use_top_level_report_status_only: true

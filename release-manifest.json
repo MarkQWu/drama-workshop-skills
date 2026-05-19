@@ -33,7 +33,7 @@
     "assets": "assets/**"
   },
   "runtime_policy": {
-    "default": "generated_copy",
+    "default": "canonical_symlink",
     "allowed_states": [
       "hash-equivalent",
       "declared symlink",
@@ -46,25 +46,25 @@
     {
       "name": "claude",
       "path": "~/.claude/skills/short-drama",
-      "policy": "generated_copy",
+      "policy": "canonical_symlink",
       "required": true
     },
     {
       "name": "codex",
       "path": "~/.codex/skills/short-drama",
-      "policy": "generated_copy",
+      "policy": "canonical_symlink",
       "required": true
     },
     {
       "name": "workbuddy",
       "path": "~/.workbuddy/skills/short-drama",
-      "policy": "generated_copy",
+      "policy": "canonical_symlink",
       "required": true
     },
     {
       "name": "openclaw",
       "path": "~/.openclaw/skills/short-drama",
-      "policy": "generated_copy",
+      "policy": "canonical_symlink",
       "required": true
     }
   ],
@@ -109,7 +109,8 @@
       "short-drama/references/update-mechanism.md",
       "short-drama/references/output-templates.md",
       "short-drama/scripts/release.sh",
-      "short-drama/scripts/sync-all-locations.sh"
+      "short-drama/scripts/sync-all-locations.sh",
+      ".github/workflows/release.yml"
     ]
   },
   "checks": {
@@ -201,7 +202,9 @@
   ],
   "release_checklist": [
     "Confirm canonical repo visibility before public-distribution writes.",
+    "Keep local runtime roots as symlinks/junctions to the single canonical repo; do not copy package directories into agent skills roots.",
     "Update package root only; runtime roots are validation targets until an explicit install/sync phase.",
+    "Confirm all distribution package roots, including sibling skills, are hash-equivalent in runtime roots.",
     "Update VERSION and WHATSNEW.md together.",
     "Run ./release-gate --dry-run and inspect JSON blocking_findings.",
     "Do not sync, delete, overwrite, or install from release-gate.",

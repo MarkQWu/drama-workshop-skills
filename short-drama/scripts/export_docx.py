@@ -140,6 +140,10 @@ def export_docx(input_path, output_path, ref_doc=None):
 
 
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] in {"-h", "--help"}:
+        print("用法: python3 export_docx.py <输入.md> <输出.docx> [reference-doc]")
+        sys.exit(0)
+
     if len(sys.argv) < 3:
         print("用法: python3 export_docx.py <输入.md> <输出.docx> [reference-doc]")
         sys.exit(1)

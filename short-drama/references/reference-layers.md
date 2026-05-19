@@ -14,6 +14,14 @@
 | `modes` | Medium, market, or command-mode specific overlays | Can override baseline rules only inside its declared mode |
 | `templates` | Reusable output formats, forms, prompt skeletons, and project artifacts | Contractual for formatting, non-authoritative for method |
 
+Chinese control names:
+
+- `foundation` = 地基层
+- `structure` = 骨架层
+- `craft` = 血肉层
+- `modes` = 模式覆盖层
+- `templates` = 输出契约层
+
 ## Classification
 
 ### Foundation
@@ -25,6 +33,7 @@
 | `project-management.md` | Project state schema, active project routing, write safety |
 | `research-fallback.md` | Research fallback behavior when search/tools are unavailable |
 | `research-guide.md` | Research workflow and factual grounding |
+| `three-layer-control.md` | Original-story control boundary: foundation 100%, structure 75%, craft 35%; decides whether a problem blocks, repairs structure, or stays advisory |
 | `update-mechanism.md` | `/更新` behavior and repository-level update policy |
 | `used-lines-protocol.md` | Reuse prevention and line-level continuity hygiene |
 
@@ -34,6 +43,7 @@
 |---|---|
 | `anchor-library.md` | Genre anchor examples and emotional reference pool |
 | `anchor-trigger.md` | Anchor activation logic for planning and episodes |
+| `commercial-ledger-cn.md` | Domestic commercial ledger for viewer-buy reason, paid hook pressure, payoff delivery, and villain escalation |
 | `creative-intent-ledger.md` | `control=creative_guidance`; original premise, core relationship, satisfaction engine, ending preference, and non-negotiables |
 | `genre-guide.md` | Genre taxonomy, audience fit, and configuration choices |
 | `hook-design.md` | Episode-ending hook types and placement strategy |
@@ -50,6 +60,7 @@
 | Reference | Primary role |
 |---|---|
 | `dramatic-truth.md` | Dialogue truth, anti-trailer-speak, and polish audit |
+| `dialogue-craft-cn.md` | Chinese dialogue voice fingerprint, subtext, deletion-first fixes |
 | `quality-rubric.md` | `control=soft_rubric + commercial_vitality_rubric + anti_greenlight`; hard-gate overlay only for OOC, compliance, unfilmable output, medium mismatch, or factual contradiction |
 | `quality-rules.md` | Quality constraints and recurring failure patterns |
 | `realism-checklist.md` | Plausibility, causality, and grounded behavior checks |
@@ -67,9 +78,16 @@
 | `storyboard-guide.md` | Storyboard and video prompt generation guide |
 | `storyboard-rules.md` | Storyboard command constraints and checks |
 | `overseas/anti-patterns.md` | Overseas mode failure patterns |
+| `overseas/anti-domestic-transfer.md` | Domestic-market carryover and failed transfer patterns |
+| `overseas/anti-structure-import.md` | Feature-film and domestic-structure vocabulary pollution |
+| `overseas/compliance-risk.md` | Overseas legal, IP, cultural, and similarity risk separated from domestic compliance |
 | `overseas/dialogue-craft.md` | Overseas dialogue craft and platform conventions |
+| `overseas/dialogue-exemplar-risk.md` | Long-form / prestige exemplar use boundaries and contamination risks |
+| `overseas/dialogue-platform.md` | Overseas vertical-platform native dialogue rules |
 | `overseas/hard-rules.md` | Overseas mode non-negotiable constraints |
+| `overseas/layer-index.md` | Overseas reference taxonomy and causal placement rules |
 | `overseas/platform-knowledge.md` | Overseas platform and market reference |
+| `overseas/vertical-filmability.md` | 9:16 phone-screen filmability and readability anti-patterns |
 
 ### Templates
 
@@ -97,10 +115,16 @@ These references now carry explicit metadata fields:
 | `compliance-checklist.md` | `hard_gate` | `/自检`, `/导出`, and publishability/platform risk checks |
 | `research-guide.md` | `hard_gate` | `/考据` and thick-topic script generation that relies on domain facts |
 | `research-fallback.md` | `hard_gate` | `/考据 auto` when WebSearch, WebFetch, PDF, or source access fails |
+| `three-layer-control.md` | `control_model` | `/策划`, `/角色开发`, `/考据`, `/分集目录`, `/分集`, `/自检`, `/圆桌诊断`, `/角色一致性`, `/导出`, `/分镜`, and any blocking decision |
 | `update-mechanism.md` | `hard_gate` | Every skill activation update check and explicit `/更新` command |
 | `ai-live-rules.md` | `hard_gate` | `medium=ai_live` or missing medium |
 | `comic-rules.md` | `hard_gate` | `medium=comic` |
 | `overseas/hard-rules.md` | `hard_gate` | `mode=overseas` before `/开始`, `/分集`, and `/自检` |
+| `overseas/compliance-risk.md` | `hard_gate` | `mode=overseas` before `/开始`, `/分集`, `/自检`, `/合规`, and `/导出` |
+| `overseas/layer-index.md` | `reference_architecture` | `mode=overseas` before selecting overseas references or classifying new material |
+| `overseas/anti-domestic-transfer.md` | `review_gate` | `mode=overseas` before `/开始`, `/分集`, `/自检`, and domestic-carryover diagnosis |
+| `overseas/anti-structure-import.md` | `hard_gate` | `mode=overseas` before reviewing outlines, beat sheets, structural documents, and reference imports |
+| `overseas/vertical-filmability.md` | `mixed_gate` | `mode=overseas` before `/分集`, `/自检`, scene polish, and production feasibility review |
 
 ## Control Boundary
 
@@ -114,8 +138,19 @@ Hard gates block continuation, export, delivery, or publishability advice when e
 | Project state and write safety | `project-management.md` | Command would read/write the wrong project, overwrite state, or corrupt project progress |
 | Compliance and platform risk | `compliance-checklist.md` | Content crosses legal, platform, or publishability red lines |
 | Research and factual traceability | `research-guide.md`, `research-fallback.md` | Thick or medium-weight topics rely on fabricated, untraceable, or contradicted facts |
+| Three-layer control boundary | `three-layer-control.md` | A command misclassifies a foundation, structure, or craft problem and would either under-block collapse risk or over-block creative texture |
 | Medium and market hard rules | `ai-live-rules.md`, `comic-rules.md`, `overseas/hard-rules.md` | Script is unfilmable, medium-mismatched, or violates declared market constraints |
 | Release/update behavior | `update-mechanism.md` | `/更新` or startup update checks point to the wrong repo or split authority |
+
+### Original Three-Layer Control Strength
+
+The original-story skill uses control strength, not score weight:
+
+| Layer | Control strength | Execution rule |
+|---|---:|---|
+| Foundation / 地基层 | 100% | Objective collapse risks block continuation, export, delivery, or publishability advice. |
+| Structure / 骨架层 | 75% | Lock the story job, pressure, payoff, rhythm, and hook; do not lock surface implementation. |
+| Craft / 血肉层 | 35% | Score, diagnose, and revise line/scene texture; do not block solely for style unless it crosses foundation or structure. |
 
 ### Soft Rubrics
 
@@ -153,7 +188,7 @@ The next Phase 4 pass should add per-document metadata to hard-gate candidates:
 
 ```yaml
 layer: foundation|structure|craft|modes|templates
-control: hard_gate|soft_rubric|creative_guidance|template_contract
+control: hard_gate|control_model|soft_rubric|creative_guidance|template_contract
 authority_id: short-drama.<stable-id>
 canonical_path: references/<path>
 read_when: <command or condition>

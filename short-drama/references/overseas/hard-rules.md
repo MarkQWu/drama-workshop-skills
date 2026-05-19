@@ -6,110 +6,171 @@ canonical_path: references/overseas/hard-rules.md
 read_when: mode is overseas before /开始, /分集, and /自检
 ---
 
-# Hard Rules — Non-Negotiable Genre Constraints
+# Hard Rules — Overseas Hard Gate Matrix
 
-> Violation of ANY rule = episode fails, must rewrite.
-> Source: B6 failure cases (13 rules) + B5 mafia craft expert + C2 recommendations
+> Only **HARD BLOCK** items create `violation=must rewrite`.
+> **REVIEW** items create a human-review flag and cannot be the sole basis for must-rewrite.
+> **STRONG GUIDANCE** items are craft constraints; treat misses as revision notes unless they also trigger a HARD BLOCK.
+> Source: B6 failure cases + B5 mafia craft expert + C2 recommendations, reclassified into gate severity.
 > Read before /开始, /分集, /自检.
 >
 > **v1.20.0 适用范围说明**：domestic mode 的「Ep1 设计卡 / 首集冷开场硬合同 / 有效爽点判定 / 事件钩首集硬约束 / 首集传播句」**不强制套用到 overseas mode**——overseas 首集规则按本文件 + `anti-patterns.md`（mafia romance / dubcon timing / paywall × beat 对齐等海外 craft 体系）。如需把 v1.20.0 个别规则迁过来，需独立做 overseas 校准（mafia romance hard rules vs domestic 战神归来 hard rules 不可互换）。
 
----
+## Severity Definitions
 
-## Category 1: Content Prohibitions (what MUST NOT appear)
-
-### Rule 1: No domestic drama transplants
-Script must not contain direct translation/adaptation of Chinese short drama plot devices. Self-check: "Can this beat be reverse-traced to a specific Chinese drama?" If yes, rewrite.
-
-### Rule 2: No known mafia IP names
-No character names, family names, or signature plot devices from existing English mafia IP (Corleone / Shelby / Soprano / Moretti / Castellano etc.). Create original family naming.
-
-### Rule 3: No Chinese status system dependencies
-Male lead's power must NOT depend on audience understanding Chinese identity systems (class humiliation / 入赘 / bloodline purity). Must map to English-language power systems: inheritance rights, territory control, honor debt, family oath.
-
-### Rule 4: No male-frequency humiliation-to-power arc
-"Endure humiliation → suddenly become powerful" narrative structure is DOA with Western audiences. They read the humiliation phase as "male lead is a loser." (100% failure rate in 2023-2024 overseas attempts — 赘婿/战神 genres all flopped.)
-
-### Rule 5: Violence calibration — male lead CANNOT kill civilians/women/children
-- ✅ Can kill: men who threatened the female lead, traffickers, rapists, rival mafia who crossed a line
-- ❌ Cannot kill: civilians (instantly unfuckable), women (instantly unfuckable), children (entire IP dead)
-- This is THE hardest gate for English dark romance readers. No exceptions, no "he had a good reason."
-
-### Rule 6: No chemical/drug-induced intimacy
-No aphrodisiacs, cold medicine mix-ups, magic potions, or any external substance replacing consent escalation. English dark romance intimacy is gated by "choice under pressure," not chemical accidents. Violation = Goodreads 1-star review bombing ("dubcon without payoff").
-
-### Rule 7: No traceable real-person likenesses
-Character designs and personas must not be traceable to real actors or public figures. (670 AI dramas pulled from Chinese platforms for unauthorized likeness use.)
+- **HARD BLOCK**: Cannot ship in overseas mode. Rewrite content before continuing, unless explicitly labeled as an export/process stop.
+- **REVIEW**: Must be surfaced to a human editor or project owner. Rewrite only if the review confirms target-market, legal, or relationship-grammar failure.
+- **STRONG GUIDANCE**: Craft preference or diagnostic heuristic. Use to improve the draft, not as an automatic fail state.
 
 ---
 
-## Category 2: Structural Requirements (what MUST appear)
+## HARD BLOCK Gates
 
-### Rule 8: Consent grammar timeline
-- ep 1-2: Dubious consent allowed (forced proximity, possessive behavior, power imbalance)
-- ep 3: MUST upgrade to explicit choice (female lead actively chooses, knows the cost)
-- Misread this = Goodreads 1-star. Read it right = the entire genre's engine.
-- HA model is gold standard: zero physical contact for first 6 chapters, consent pre-paid via "consent-by-exhibition" prologue.
+### HB1: Target Market Cannot Be Missing
 
-### Rule 9: Female lead agency KPI
-- Every episode: ≥3 decisions that change the plot direction
-- She must CHOOSE darkness, not merely REACT to it
-- "I'm scared but I'm also stupid" (HA model) = self-aware agency shield that prevents TSTL (too stupid to live) reader reaction
-- Target: 60-80% of decisions should change plot direction (DK=62.5%, GoM=59%, HA=80%)
-- **Dialogue floor**: Female lead should have ≥2 spoken lines per episode (not counting VO). Action-only female leads read as plot devices at vertical-drama runtime — audience needs to hear her voice to connect with her.
+An overseas project must name a target market, platform, or audience assumption before genre rules are applied.
 
-### Rule 10: EP1 must detonate, not ease in — **GRANDFATHERED pending rebuild**
+Block when:
+- The brief only says "overseas" with no market/platform/audience assumption.
+- A scene depends on an unstated audience norm while also using coercion, intimacy, violence, legal stakes, or protected-identity material.
+- The target market changes mid-project without rechecking consent, violence, IP, and cultural assumptions.
 
-**Historical content (v0.3, scrapped 2026-04-14)**: prescribed a 5-beat mandatory bundle (Observation-as-Surveillance / Verbal Claim / Violence Redirected / Micro-爽点 / Near-miss bilateral awareness). This prescription produced an EP1 that scored 9/10 on rubric but read as "3岁小孩写的" to the user.
+### HB2: No Traceable IP or Real-Person Likeness
 
-**Current operative guidance**:
+Script, character design, naming, and persona must not be traceable to existing English mafia IP, recognizable fictional families, real actors, public figures, or platform-protected likenesses.
 
-> EP1 should **detonate, not ease in** — open mid-conflict (kidnapping, rejection, confrontation, public humiliation, identity reveal). Successful DramaBox/ReelShort titles (Fated to My Forbidden Alpha, Mafia Lover) open on active conflict, not atmosphere. No 15-second static opening shots. See `references/platform-knowledge.md` §2 for the 3-second drop-off cliff.
+Block when:
+- Character names, family names, taglines, visual designs, or signature plot devices can reasonably be traced to existing IP or a real person.
+- The draft uses near-neighbor substitutions that preserve recognizability.
+- Brand, family, or location elements are presented as real-world protected marks without clearance.
 
-Specific beat prescriptions deferred until EP1-3 pilots are hand-written bottom-up and a new beat dictionary is derived from what worked.
+### HB3: No Domestic Mechanism Transplanted as Target-Market Logic
 
-### Rule 11: Paywall episodes must land on the strongest cliffhanger of that phase
-- First paywall typically at ep 10/11 for 60-ep series (floats between ep 6 and ep 11 per title — see `platform-knowledge.md` §3).
-- Secondary paywalls around ep 20 and ep 30 are plausible but single-sourced; treat as planning aid, not canon.
-- The beat at the paywall must be the strongest unresolved cliffhanger available at that point, not just "every 10 episodes."
-- Gwen Hayes beat mapping (Adhesion at ep 11 / Deepening at ep 20 / Midpoint at ep 30) is a writing-coach frame, not industry-native — useful as scaffold, not law.
+Chinese/domestic mechanisms cannot carry the core conflict unless they are remapped into the declared target market's power grammar.
 
-### Rule 12: Mafia honorifics accuracy
-Don / consigliere / made man / sitdown / capo / underboss — must be used correctly. Wrong usage = DOA with American audiences who grew up on Sopranos/Godfather cultural literacy.
+Block when:
+- The male lead's power depends on audience understanding 入赘, bloodline purity, domestic class humiliation, household registration, local school/workplace hierarchy, or similar China-specific status systems.
+- A domestic legal, family, medical, workplace, school, or status mechanism is used as if the target audience already shares that context.
+- The beat is a direct translation of a known Chinese short-drama device and the overseas version adds no target-market equivalent.
 
-### Rule 13: "Would this work as a generic CEO?" reverse test
-After writing any beat: "If I replace the male lead with a regular CEO, does this beat still work?" If yes = the mafia setting isn't doing any work → rewrite to make the mafia power dynamics load-bearing.
+Allowed remaps:
+- inheritance rights
+- territory control
+- honor debt
+- family oath
+- cartel/mafia chain of command
+- trust, estate, or contract stakes legible in the named market
+
+### HB4: Consent Breach and Chemical-Consent Substitution
+
+Intimacy must be legible as relationship grammar for the declared target market. Coercion may exist in dark romance only when the story preserves choice, cost, and payoff; substances cannot replace consent escalation.
+
+Block when:
+- Aphrodisiacs, cold-medicine mix-ups, intoxication, magic potions, hypnosis, or any external substance causes intimacy or substitutes for consent.
+- The female lead has no authored choice before major intimacy escalation.
+- A coercive setup is played as romance without later consent clarification, cost, or reversal.
+- The scene violates the declared target-market relationship grammar in `compliance-risk.md`.
+
+### HB5: Violence Calibration Breach
+
+The male lead cannot author violence downward against protected or innocent targets.
+
+Block when:
+- He kills, tortures, sexually assaults, threatens, or deliberately harms civilians, children, innocent bystanders, or the female lead as a romantic beat.
+- Violence against women is used as proof of his desirability or dominance rather than an explicitly condemned villain action.
+- The script asks the audience to eroticize helpless victimization without agency, reversal, or protection.
+
+Allowed dark-romance violence remains outward and narratively accountable:
+- against traffickers, rapists, or attackers
+- against rival mafia who cross a declared line
+- as protection, rescue, retaliation, or underworld consequence aimed away from innocent targets
+
+## REVIEW Gates
+
+### R1: Domestic-Drama Smell
+
+Flag any passage that feels reverse-traceable to a Chinese drama plot device. Do not auto-rewrite solely because it resembles a domestic source; review whether the beat has been remapped to the declared target market.
+
+Known review triggers:
+1. Fatal toxin + wrong blood report as misunderstanding engine
+2. Aphrodisiac + cold medicine mix-up
+3. 追妻火葬场 grovel without target-market grovel grammar
+4. 下克上 without target-market power mapping
+5. Good girl -> mafia queen without a moral turning point episode
+
+Escalate to HB3 only when the domestic mechanism is doing the actual causal work.
+
+### R2: Male-Frequency Humiliation-to-Power Arc
+
+Flag "endure humiliation -> suddenly become powerful" arcs for review. This pattern has weak overseas fit when it makes the male lead read as passive or when it imports domestic male-frequency gratification.
+
+Escalate to HB3 only when the arc depends on Chinese status systems or direct domestic genre transfer.
+
+### R3: Consent Timing
+
+Flag relationship escalation that delays explicit choice too long for the declared target market. The useful default is:
+- ep 1-2: forced proximity, possessive behavior, or power imbalance may appear if framed as pressure rather than consent
+- around ep 3 or first major intimacy beat: the female lead should make an active choice and understand the cost
+
+This timing is a diagnostic, not an automatic gate. Escalate to HB4 only when there is a consent breach, chemical substitution, or unpayoffed coercion.
+
+### R4: Female Lead Agency
+
+Flag episodes where the female lead only reacts, is carried by plot, or never voices a preference. The numeric diagnostics below are useful but not hard gates:
+- Aim for multiple plot-changing decisions per episode.
+- A spoken-line floor can help catch action-only female leads.
+- Strong examples often let the female lead choose darkness rather than merely suffer it.
+
+Escalate to HB4 or HB5 only when lack of agency creates consent or victimization failure.
+
+### R5: Mafia-Language Accuracy
+
+Flag incorrect or ornamental use of Don / consigliere / made man / sitdown / capo / underboss. Rewrite the term or the power relation when misuse confuses the scene's stakes.
+
+### R6: Generic CEO Reverse Test
+
+Ask: "If the male lead became a regular CEO, would this beat still work?" If yes, review whether the mafia setting is load-bearing. This is a craft diagnostic unless the beat also triggers HB3.
+
+### R7: English Audience Reverse Test
+
+After generating each episode, produce a reverse-test note: "If this beat appeared in a comparable overseas vertical drama, would viewers skip or rewind?" Treat the answer as review input, not as a standalone violation.
 
 ---
 
-## Category 3: Process Requirements (workflow-level)
+## STRONG GUIDANCE
 
-### Rule P1: English audience reverse test (per episode)
-After generating each episode, produce a "reverse test report": "If this beat appeared in ReelShort's *Bound by Honor* or *Mated to the Alpha King*, would viewers skip or rewind?"
+### SG1: EP1 Should Detonate, Not Ease In
 
-### Rule P2: Legal flag checklist (per episode)
-List all character names, family names, brand elements, locations in the episode. Human editor must verify no IP conflicts.
+Open mid-conflict: kidnapping, rejection, confrontation, public humiliation, identity reveal, or another active pressure point. Avoid long static atmosphere openings. See `references/platform-knowledge.md` section 2 for retention context.
 
-### Rule P3: "Feels like C-drama" flag
-Any passage that "feels like a Chinese drama plot device" must be flagged for human review. The 5 known C-drama red flags to watch for:
-1. Fatal toxin + wrong blood report → misunderstanding engine (replace with identity misrecognition)
-2. Aphrodisiac + cold medicine mix-up (delete entirely, replace with forced proximity)
-3. 追妻火葬场 grovel without English grovel grammar (must rewrite beats: he does what she always asked + gives up what he swore never to + chooses her over family at literal gunpoint)
-4. 下克上 without English power mapping (clean transfer IF mapped to Tommy Shelby model)
-5. Good girl → mafia queen without moral turning point episode (must add: she orders a hit / approves torture / chooses family over civilian friend)
+Do not enforce a fixed 5-beat EP1 bundle. Specific beat prescriptions are deferred until EP1-3 pilots are hand-written bottom-up and a new beat dictionary is derived from what worked.
 
----
+### SG2: Paywall Episodes Should Carry the Strongest Unresolved Pressure
 
-## Historical anti-pattern (provenance retained for diagnostic clarity)
+First paywall often falls around ep 10/11 for 60-ep series but can float by title. Secondary paywalls around ep 20 and ep 30 are planning aids, not canon. Put the strongest unresolved cliffhanger of that phase at the paywall rather than following a mechanical "every 10 episodes" rule.
 
-> **v0.3 note**: The section below preserves IP attribution as anti-pattern *provenance*. The anti-pattern itself is project-agnostic and applies regardless of source. Attribution is retained only so that fresh agents can recognize the pattern in the wild (when a novel is cited as inspiration); it is not a positive instruction surface.
+Gwen Hayes beat mapping (Adhesion / Deepening / Midpoint) is a writing-coach scaffold, not an industry-native law.
 
-The source pattern (novel-side example): Ch3-4 of one reference source-text in the v0.2.2 deprecation corpus contains sexual assault scenes where ALL violence is downward toward the female lead, with zero outward violence toward enemies in the same chapter window. The source author sustains this via a 300-page slow-burn redemption arc and trigger-warning tagging.
+### SG3: Risky Intimacy/Fetish Beats Belong Late and After Safety Context
 
-**Why it is an anti-pattern here**: short drama has neither the runway for slow-burn redemption nor the reader-opt-in mechanism of trigger-warning tags. First-episode violence from the male lead MUST be rerouted to "third-party aggression + male lead protects her" — violence outward (per Rule 5), never downward, ever.
+C2 Appendix 2.1 (Wound-as-Fetish), 2.2 (Hickey Branding), 2.3 (Lovers-Pose-as-Prison) should appear only after the story has established outward violence toward enemies, female-lead agency, and target-market consent grammar. Treat early use as review risk; escalate to HB4 or HB5 only when the beat breaches consent or violence calibration.
+
+### SG4: Provenance Examples Are Diagnostics, Not Positive Instructions
+
+The old v0.3 source-pattern note is retained only as diagnostic provenance: novel-length dark romance can sustain some redemption arcs through long runway and trigger-warning context, while vertical short drama usually cannot. Do not copy source-specific IP, names, scenes, or likenesses.
 
 ---
 
-## Appendix beats restricted to paid episodes
+## EXPORT / PROCESS STOPS
 
-C2 Appendix 2.1 (Wound-as-Fetish), 2.2 (Hickey Branding), 2.3 (Lovers-Pose-as-Prison) — all DK-exclusive beats in the Goodreads 1-star zone. May only appear AFTER ep 15, and ONLY after Rule 5 violence calibration (outward violence toward enemies) is established by ep 3.
+### EP1: Legal Flag Checklist Missing Before Export
+
+Before `/导出` or external handoff, the episode set must include a legal/IP review list. Missing this list blocks export, but it does not imply the script body must be rewritten.
+
+Block export when the project has not listed:
+- character names
+- family names
+- brand elements
+- locations
+- visual likeness references
+- source inspirations or comparable titles used during drafting

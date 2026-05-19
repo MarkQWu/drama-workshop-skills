@@ -6,7 +6,8 @@ $ErrorActionPreference = "Stop"
 
 $repoGitHub = "https://github.com/MarkQWu/drama-workshop-skills.git"
 $repoMirror = "https://ghfast.top/https://github.com/MarkQWu/drama-workshop-skills.git"
-$cache = Join-Path $env:USERPROFILE ".claude\.skill-repos\drama-workshop-skills"
+$cache = Join-Path $env:USERPROFILE ".gobuildit\skill-repos\drama-workshop-skills"
+$scriptDir = if ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { "" }
 
 Write-Host "=== gobuildit Skills 安装器 ===" -ForegroundColor Cyan
 Write-Host ""
@@ -168,6 +169,27 @@ function Move-EmbeddedTrash($skillsDir) {
     }
 }
 
+function Get-LinkTarget($path) {
+    $item = Get-Item $path -Force -ErrorAction SilentlyContinue
+    if (-not $item -or -not $item.LinkType) { return "" }
+    if ($item.Target -is [array]) { return ($item.Target | Select-Object -First 1) }
+    return [string]$item.Target
+}
+
+function New-SkillLink($target, $source) {
+    try {
+        New-Item -ItemType Junction -Path $target -Target $source -ErrorAction Stop | Out-Null
+        return
+    } catch {
+        try {
+            New-Item -ItemType SymbolicLink -Path $target -Target $source -ErrorAction Stop | Out-Null
+            return
+        } catch {
+            throw "无法完成安装。请以管理员身份运行终端，或开启 Windows 开发者模式后重试。"
+        }
+    }
+}
+
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "错误：未找到 git。请先安装 Git 后重新运行本安装命令。" -ForegroundColor Red
     Write-Host ""
@@ -215,23 +237,29 @@ function Try-Pull($dir) {
     return (Try-Clone $dir)
 }
 
-# Clone 或更新仓库到缓存目录
-$cacheParent = Split-Path $cache -Parent
-if (-not (Test-Path $cacheParent)) { New-Item -ItemType Directory -Path $cacheParent -Force | Out-Null }
-
-if (Test-Path (Join-Path $cache ".git")) {
-    $ok = Try-Pull $cache
+# Clone 或更新仓库到唯一 canonical 目录。
+# 本地从完整 repo 运行时直接引用当前 checkout；irm | iex 时使用 ~/.gobuildit/skill-repos 下的唯一缓存 repo。
+if ($scriptDir -and (Test-Path (Join-Path $scriptDir "short-drama\SKILL.md")) -and (Test-Path (Join-Path $scriptDir ".git"))) {
+    $cache = $scriptDir
+    Write-Host "使用本地仓库安装。" -ForegroundColor Gray
 } else {
-    if (Test-Path $cache) {
-        Move-Item -Path $cache -Destination "$cache.backup-$(Get-Timestamp)" -Force -ErrorAction SilentlyContinue
-        if (Test-Path $cache) { throw "无法备份旧缓存目录，请关闭占用它的程序后重试：$cache" }
+    $cacheParent = Split-Path $cache -Parent
+    if (-not (Test-Path $cacheParent)) { New-Item -ItemType Directory -Path $cacheParent -Force | Out-Null }
+
+    if (Test-Path (Join-Path $cache ".git")) {
+        $ok = Try-Pull $cache
+    } else {
+        if (Test-Path $cache) {
+            Move-Item -Path $cache -Destination "$cache.backup-$(Get-Timestamp)" -Force -ErrorAction SilentlyContinue
+            if (Test-Path $cache) { throw "无法准备安装目录，请关闭正在占用它的程序后重试。" }
+        }
+        $ok = Try-Clone $cache
     }
-    $ok = Try-Clone $cache
-}
-if (-not $ok) {
-    Write-Host ""
-    Write-Host "错误：下载失败。请确认已安装 Git，并打开全局代理后重新运行安装命令。" -ForegroundColor Red
-    throw "安装失败"
+    if (-not $ok) {
+        Write-Host ""
+        Write-Host "错误：下载失败。请确认已安装 Git，并打开全局代理后重新运行安装命令。" -ForegroundColor Red
+        throw "安装失败"
+    }
 }
 
 # 检测平台并收集目标目录
@@ -256,13 +284,24 @@ if ($targets.Count -eq 0) {
     $targets += Join-Path $env:USERPROFILE ".claude\skills"
 }
 
-# 安装 skill 到所有检测到的平台
+# 安装 skill 到所有检测到的平台：skills\<name> 只保留 junction，内容只存在于 $cache。
 $installed = 0
 foreach ($skillsDir in $targets) {
     if (-not (Test-Path $skillsDir)) { New-Item -ItemType Directory -Path $skillsDir -Force | Out-Null }
     Move-EmbeddedTrash $skillsDir
     Get-ChildItem "$cache" -Directory | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") } | ForEach-Object {
         $target = Join-Path $skillsDir $_.Name
+        $existingTarget = Get-LinkTarget $target
+        if ($existingTarget -and ((Resolve-Path $existingTarget -ErrorAction SilentlyContinue).Path -eq $_.FullName)) {
+            $installed++
+            return
+        }
+        if ($existingTarget -and -not (Test-Path $existingTarget)) {
+            $safeRoot = Join-Path (Split-Path $skillsDir -Parent) ".skill-trash"
+            if (-not (Test-Path $safeRoot)) { New-Item -ItemType Directory -Path $safeRoot -Force | Out-Null }
+            $backup = Join-Path $safeRoot ("broken-link-" + $_.Name + "-" + (Get-Timestamp))
+            Move-Item -Path $target -Destination $backup -Force -ErrorAction SilentlyContinue
+        }
         if (Test-Path $target) {
             $safeRoot = Join-Path (Split-Path $skillsDir -Parent) ".skill-trash"
             if (-not (Test-Path $safeRoot)) { New-Item -ItemType Directory -Path $safeRoot -Force | Out-Null }
@@ -273,9 +312,18 @@ foreach ($skillsDir in $targets) {
                 return
             }
         }
-        Copy-Item -Recurse -Force $_.FullName "$target"
+        New-SkillLink $target $_.FullName
         Write-Host "  已安装: $($_.Name)"
         $installed++
+    }
+}
+
+foreach ($packageDir in Get-ChildItem "$cache" -Directory -ErrorAction SilentlyContinue) {
+    $binDir = Join-Path $packageDir.FullName "bin"
+    if (Test-Path $binDir) {
+        Get-ChildItem $binDir -File -ErrorAction SilentlyContinue | ForEach-Object {
+            $_.Attributes = $_.Attributes -band (-bnot [System.IO.FileAttributes]::ReadOnly)
+        }
     }
 }
 
@@ -295,9 +343,6 @@ if (-not $version) { $version = "unknown" }
 Write-Host ""
 if ($installed -gt 0) {
     Write-Host "安装成功！" -ForegroundColor Green
-    foreach ($t in $targets) {
-        Write-Host "  → $t"
-    }
     Write-Host ""
     Write-Host "版本：$version" -ForegroundColor Gray
     Write-Host ""

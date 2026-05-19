@@ -1,0 +1,6 @@
+{
+  "called_nodes": ["market_adapt.validate"],
+  "checker_call_log_contains": ["command_layer_route", "market_adaptation_report_written"],
+  "consumed_artifact_ids": ["reference_skeleton", "selected_concept"],
+  "forbidden_full_node_calls_not_present": ["project_plan.prepare", "script_draft.generate"]
+}

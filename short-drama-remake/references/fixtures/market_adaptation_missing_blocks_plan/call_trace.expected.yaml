@@ -1,0 +1,6 @@
+{
+  "called_nodes": ["project_plan.prepare"],
+  "checker_call_log_contains": ["market_adaptation_required"],
+  "consumed_artifact_ids": ["reference_skeleton", "selected_concept"],
+  "forbidden_full_node_calls_not_present": ["script_draft.generate"]
+}

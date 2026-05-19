@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -44,6 +45,25 @@ DEFAULT_FORBIDDEN_SCRIPT_READS = {
     "00_source/episodes/ep_012.md",
 }
 
+DEFAULT_FORBIDDEN_READ_PREFIXES = (
+    "short-drama/references/",
+)
+
+REQUIRED_MARKET_ADAPTATION_REPORT_FIELDS = {
+    "source_market",
+    "target_market",
+    "layer_classification",
+    "reference_function_map",
+    "source_market_mechanism_map",
+    "target_market_replacement_map",
+    "must_not_carry_over",
+    "overseas_genre_promise",
+    "paywall_pressure",
+    "distance_check",
+    "blockers",
+    "warnings",
+}
+
 POSTFLIGHT_REPORT_STATUSES = {
     "passed",
     "blocked",
@@ -61,9 +81,69 @@ POSTFLIGHT_REGISTRY_OWNED_FIELDS = {
     "last_transaction_id",
 }
 
+CONTROL_LAYERS = {"foundation", "skeleton", "flesh"}
+
+MARKET_ADAPTATION_REQUIRED_NODES = {
+    "project_plan.prepare",
+    "script_draft.preflight",
+}
+
 
 class CheckFailure(Exception):
     pass
+
+
+def assert_schema_yaml_syntax(path: Path) -> None:
+    """Lightweight YAML subset lint for repo schema contracts."""
+
+    previous_same_indent: dict[int, tuple[int, str]] = {}
+    block_scalar_parent_indent: int | None = None
+    for line_no, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if "\t" in raw_line:
+            raise CheckFailure(f"{path}:{line_no}: tabs are not allowed in schema YAML")
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#") or stripped == "---":
+            continue
+
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if indent % 2 != 0:
+            raise CheckFailure(f"{path}:{line_no}: indentation must use multiples of two spaces")
+
+        content = raw_line[indent:]
+        if block_scalar_parent_indent is not None:
+            if indent > block_scalar_parent_indent:
+                continue
+            block_scalar_parent_indent = None
+
+        for previous_indent in list(previous_same_indent):
+            if previous_indent > indent:
+                del previous_same_indent[previous_indent]
+
+        if content.startswith("- "):
+            previous_same_indent[indent] = (line_no, content)
+            continue
+
+        flow_list_match = re.search(r":\s*\[(.*)\]\s*$", content)
+        if flow_list_match:
+            for item in flow_list_match.group(1).split(","):
+                value = item.strip()
+                if ":" in value and not (value.startswith('"') or value.startswith("'")):
+                    raise CheckFailure(
+                        f"{path}:{line_no}: flow list item with ':' must be quoted for strict YAML parsing"
+                    )
+
+        previous = previous_same_indent.get(indent)
+        if previous and previous[1].startswith("- "):
+            raise CheckFailure(
+                f"{path}:{line_no}: mapping item follows list item at the same indent; "
+                f"add '- ' or outdent it. Previous list item at line {previous[0]}."
+            )
+
+        if not re.match(r"^[A-Za-z0-9_.-][^:]*:\s*(.*)$", content):
+            raise CheckFailure(f"{path}:{line_no}: expected a mapping key or '- ' list item")
+        if re.match(r"^[A-Za-z0-9_.-][^:]*:\s*[>|-]\s*$", content):
+            block_scalar_parent_indent = indent
+        previous_same_indent[indent] = (line_no, content)
 
 
 def load_json_compatible_yaml(path: Path) -> dict[str, Any]:
@@ -231,6 +311,13 @@ def assert_read_trace_contract(fixture: dict[str, Any], expected_read_trace: dic
         default_hits = actual_reads.intersection(DEFAULT_FORBIDDEN_SCRIPT_READS)
         if default_hits:
             raise CheckFailure(f"{fixture['fixture_id']}: default forbidden script reads present: {sorted(default_hits)}")
+        prefix_hits = sorted(
+            path
+            for path in actual_reads
+            if any(path.startswith(prefix) for prefix in DEFAULT_FORBIDDEN_READ_PREFIXES)
+        )
+        if prefix_hits:
+            raise CheckFailure(f"{fixture['fixture_id']}: default forbidden read prefixes present: {prefix_hits}")
 
 
 def assert_call_trace_contract(fixture: dict[str, Any], expected_call_trace: dict[str, Any]) -> None:
@@ -397,6 +484,12 @@ def assert_postflight_contract(fixture: dict[str, Any]) -> None:
             raise CheckFailure(f"{fixture['fixture_id']}: postflight passed requires risk_recheck.status=passed")
         if sync_check.get("status") != "passed":
             raise CheckFailure(f"{fixture['fixture_id']}: postflight passed requires sync_check.status=passed")
+        memorable_moment = report.get("memorable_moment_check", {})
+        if memorable_moment.get("status") != "passed":
+            raise CheckFailure(f"{fixture['fixture_id']}: postflight passed requires memorable_moment_check.status=passed")
+        moment = str(memorable_moment.get("moment", "")).strip()
+        if not moment:
+            raise CheckFailure(f"{fixture['fixture_id']}: postflight passed requires a concrete memorable moment")
     else:
         if result.get("downstream_unlocked") is not False:
             raise CheckFailure(f"{fixture['fixture_id']}: non-passed postflight must set downstream_unlocked=false")
@@ -423,6 +516,143 @@ def assert_postflight_contract(fixture: dict[str, Any]) -> None:
         raise CheckFailure(f"{fixture['fixture_id']}: postflight required artifacts missing: {sorted(missing_artifacts)}")
 
 
+def assert_three_layer_control_contract(fixture: dict[str, Any]) -> None:
+    assertions = fixture.get("assertions", {}).get("three_layer_control_assertion", {})
+    if not assertions:
+        return
+
+    result = fixture.get("expected_result", {})
+    boundary = result.get("three_layer_control_boundary")
+    if not isinstance(boundary, dict):
+        raise CheckFailure(f"{fixture['fixture_id']}: three_layer_control_boundary is required")
+
+    blocking_layers = set(boundary.get("blocking_layers", []))
+    warning_layers = set(boundary.get("warning_layers", []))
+    unknown_layers = (blocking_layers | warning_layers).difference(CONTROL_LAYERS)
+    if unknown_layers:
+        raise CheckFailure(f"{fixture['fixture_id']}: unknown control layers: {sorted(unknown_layers)}")
+
+    if assertions.get("preflight_blocks_only_foundation_or_skeleton") is True:
+        invalid_blockers = blocking_layers.difference({"foundation", "skeleton"})
+        if invalid_blockers:
+            raise CheckFailure(
+                f"{fixture['fixture_id']}: preflight cannot hard-block on layers: {sorted(invalid_blockers)}"
+            )
+
+    required_free_zones = set(assertions.get("required_free_zones", []))
+    free_zones = set(boundary.get("free_zones", []))
+    missing_free_zones = required_free_zones.difference(free_zones)
+    if missing_free_zones:
+        raise CheckFailure(f"{fixture['fixture_id']}: missing free zones: {sorted(missing_free_zones)}")
+
+    if assertions.get("requires_memorable_moment_question") is True:
+        questions = set(boundary.get("postflight_questions", []))
+        if "memorable_moment" not in questions:
+            raise CheckFailure(f"{fixture['fixture_id']}: postflight questions must include memorable_moment")
+
+
+def assert_market_adaptation_contract(fixture: dict[str, Any]) -> None:
+    assertions = fixture.get("assertions", {}).get("market_adaptation_assertion", {})
+    if not assertions:
+        return
+
+    route = fixture.get("expected_route", {})
+    result = fixture.get("expected_result", {})
+    trace = fixture.get("node_invocation_trace", {})
+    route_node = route.get("node_id")
+    target_market = assertions.get("target_market")
+    source_market = assertions.get("source_market")
+    requires_market_adaptation = assertions.get("requires_market_adaptation")
+    if requires_market_adaptation is None:
+        requires_market_adaptation = target_market == "overseas" or (
+            bool(source_market) and bool(target_market) and source_market != target_market
+        )
+
+    if assertions.get("overseas_command_report_only") is True:
+        if route_node != "market_adapt.validate":
+            raise CheckFailure(f"{fixture['fixture_id']}: /仿写 出海 must route to market_adapt.validate")
+        if route.get("normalized_intent") != "validate_target_market_adaptation":
+            raise CheckFailure(
+                f"{fixture['fixture_id']}: market_adapt.validate route must use normalized_intent "
+                "validate_target_market_adaptation"
+            )
+        if result.get("body_generated") is not False:
+            raise CheckFailure(f"{fixture['fixture_id']}: /仿写 出海 must not generate script body")
+        forbidden_created = set(result.get("forbidden_created_artifacts", []))
+        created = set(result.get("created_artifacts", []))
+        leaked = created.intersection(forbidden_created)
+        if leaked:
+            raise CheckFailure(f"{fixture['fixture_id']}: /仿写 出海 created forbidden artifacts: {sorted(leaked)}")
+        report = result.get("market_adaptation_report")
+        if not isinstance(report, dict):
+            raise CheckFailure(f"{fixture['fixture_id']}: /仿写 出海 must expose expected_result.market_adaptation_report")
+        missing_report_fields = REQUIRED_MARKET_ADAPTATION_REPORT_FIELDS.difference(report.keys())
+        if missing_report_fields:
+            raise CheckFailure(
+                f"{fixture['fixture_id']}: market_adaptation_report missing fields: {sorted(missing_report_fields)}"
+            )
+
+    if assertions.get("overseas_concepts_from_start") is True:
+        if route_node != "concept.generate":
+            raise CheckFailure(f"{fixture['fixture_id']}: /仿写 出海 without selected concept must route to concept.generate")
+        if route.get("normalized_intent") != "generate_skin_swap_concepts":
+            raise CheckFailure(
+                f"{fixture['fixture_id']}: concept.generate route must use normalized_intent generate_skin_swap_concepts"
+            )
+        created = set(result.get("created_artifacts", []))
+        expected_artifact = assertions.get("expected_concept_artifact", "02_concepts/concepts-overseas.md")
+        if expected_artifact not in created:
+            raise CheckFailure(f"{fixture['fixture_id']}: overseas concept artifact missing: {expected_artifact}")
+        forbidden_created = set(result.get("forbidden_created_artifacts", []))
+        leaked = created.intersection(forbidden_created)
+        if leaked:
+            raise CheckFailure(f"{fixture['fixture_id']}: overseas concept stage created forbidden artifacts: {sorted(leaked)}")
+        concept_fields = set(assertions.get("required_overseas_concept_fields", []))
+        if not concept_fields.issuperset(
+            {
+                "target_market",
+                "layer_classification",
+                "overseas_genre_promise",
+                "source_mechanisms_to_replace",
+                "paywall_pressure",
+            }
+        ):
+            raise CheckFailure(f"{fixture['fixture_id']}: overseas concept fixture must assert core overseas fields")
+
+    if assertions.get("forbid_short_drama_overseas_reads") is True:
+        read_assertion = fixture.get("assertions", {}).get("read_trace_assertion", {})
+        actual_reads = set(read_assertion.get("actual_reads", []))
+        leaked_reads = sorted(path for path in actual_reads if path.startswith("short-drama/references/overseas/"))
+        if leaked_reads:
+            raise CheckFailure(f"{fixture['fixture_id']}: remake market adaptation read short-drama overseas refs: {leaked_reads}")
+
+    if not requires_market_adaptation or route_node not in MARKET_ADAPTATION_REQUIRED_NODES:
+        return
+
+    report_status = assertions.get("market_adaptation_report_status", "missing")
+    if report_status in {"missing", "stale", "blocked"}:
+        if result.get("status") != "blocked":
+            raise CheckFailure(f"{fixture['fixture_id']}: missing/stale market adaptation report must block {route_node}")
+        summary = result.get("blocking_summary", {})
+        if summary.get("blocker_code") != "MARKET_ADAPTATION_MISSING_OR_STALE":
+            raise CheckFailure(f"{fixture['fixture_id']}: expected blocker_code MARKET_ADAPTATION_MISSING_OR_STALE")
+        if result.get("body_generated") is not False:
+            raise CheckFailure(f"{fixture['fixture_id']}: market adaptation block must set body_generated=false")
+        created = set(result.get("created_artifacts", []))
+        forbidden_created = set(result.get("forbidden_created_artifacts", []))
+        leaked = created.intersection(forbidden_created)
+        if leaked:
+            raise CheckFailure(f"{fixture['fixture_id']}: market adaptation block created forbidden artifacts: {sorted(leaked)}")
+        if summary.get("recommended_next_node") != "market_adapt.validate":
+            raise CheckFailure(f"{fixture['fixture_id']}: market adaptation block must recommend market_adapt.validate")
+    elif report_status == "passed":
+        consumed = set(trace.get("consumed_report_ids", []))
+        if "market_adaptation_report" not in consumed:
+            raise CheckFailure(f"{fixture['fixture_id']}: passed market adaptation report must be consumed by {route_node}")
+    else:
+        raise CheckFailure(f"{fixture['fixture_id']}: unknown market_adaptation_report_status {report_status!r}")
+
+
 def check_fixture(path: Path) -> list[str]:
     fixture = load_json_compatible_yaml(path)
     assert_required_fields(fixture, path)
@@ -439,6 +669,8 @@ def check_fixture(path: Path) -> list[str]:
     assert_fast_confirmed_invalidation(fixture)
     assert_phase5_specific_contracts(fixture)
     assert_postflight_contract(fixture)
+    assert_three_layer_control_contract(fixture)
+    assert_market_adaptation_contract(fixture)
     return [f"ok fixture {fixture['fixture_id']}"]
 
 
@@ -485,12 +717,29 @@ def run_self_test() -> list[str]:
     assert_transaction_contract(synthetic)
     assert_fast_confirmed_invalidation(synthetic)
     assert_phase5_specific_contracts(synthetic)
+    assert_three_layer_control_contract(synthetic)
+
+    forbidden_prefix_synthetic = dict(synthetic)
+    forbidden_prefix_synthetic["fixture_id"] = "self_test_forbidden_short_drama_reference_prefix"
+    forbidden_prefix_synthetic["assertions"] = {
+        "read_trace_assertion": {
+            "actual_reads": ["short-drama/references/overseas/vertical-filmability.md"],
+            "enforce_default_forbidden_script_reads": True,
+        }
+    }
+    try:
+        assert_read_trace_contract(forbidden_prefix_synthetic)
+    except CheckFailure:
+        pass
+    else:
+        raise CheckFailure("self-test: short-drama/references/ prefix leak was not blocked")
     return ["ok self-test"]
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Check short-drama-remake deterministic gate fixtures.")
     parser.add_argument("--fixture", action="append", default=[], help="Path to a JSON-compatible YAML fixture file.")
+    parser.add_argument("--schema", action="append", default=[], help="Path to a human YAML schema contract file.")
     parser.add_argument("--self-test", action="store_true", help="Run built-in smoke test.")
     args = parser.parse_args(argv)
 
@@ -498,6 +747,10 @@ def main(argv: list[str]) -> int:
     try:
         if args.self_test:
             messages.extend(run_self_test())
+        for raw_path in args.schema:
+            path = Path(raw_path)
+            assert_schema_yaml_syntax(path)
+            messages.append(f"ok schema {path}")
         for raw_path in args.fixture:
             messages.extend(check_fixture(Path(raw_path)))
     except CheckFailure as exc:
@@ -505,7 +758,7 @@ def main(argv: list[str]) -> int:
         return 1
 
     if not messages:
-        parser.error("provide --self-test or at least one --fixture")
+        parser.error("provide --self-test, --schema, or at least one --fixture")
     for message in messages:
         print(message)
     return 0

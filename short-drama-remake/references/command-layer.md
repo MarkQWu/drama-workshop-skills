@@ -25,7 +25,8 @@ Do not scan original `~/short-drama-projects/` for remake state. Managed remake 
 | `/仿写 帮助` | `show_remake_command_help` | Help surface | Show command list, recovery examples, and stage order. |
 | `/仿写 骨架` | `extract_reference_skeleton` | Existing skeleton stage | Requires source material or ingested source files; respect source scope. |
 | `/仿写 换皮` | `generate_skin_swap_concepts` | Existing concept stage | Requires skeleton; partial sources only unlock sample concepts. |
-| `/仿写 定案` | `deepen_selected_concept` | Existing project planning stage | Requires skeleton and selected concept. |
+| `/仿写 出海` | `enter_overseas_remake_flow` | Target-market concept/adaptation stage | With no selected concept, generate overseas-adapted skin-swap concepts from the skeleton. With a selected concept, write/refresh `market-adaptation-report.md`, not a script body. |
+| `/仿写 定案` | `deepen_selected_concept` | Existing project planning stage | Requires skeleton and selected concept; if target market is overseas or differs from source market, consume accepted `market_adaptation_report` first. |
 | `/仿写 集纲` | `create_episode_outlines` | Existing outline stage | Requires project plan and source/skeleton context. |
 | `/仿写 写集 N` | `draft_episode_script` | `script_draft.preflight` then draft if passed | Mandatory preflight. If blocked, `body_generated=false` and no episode script file. |
 | `/仿写 审稿 N` | `audit_episode_script` | Review/postflight-adjacent audit | Advisory unless explicitly closing canonical postflight; never unlock next episode by itself. |
@@ -41,6 +42,8 @@ These commands are optional aids for uncertain moments. They are not required ga
 | `/仿写 诊断会 N` | `advisory_episode_diagnosis` | Episode outline or candidate script N needs diagnosis. | Must not generate final body, commit canon, update current pointer, or unlock next episode. |
 
 Preferred public labels for docs are `方向评审`, `方案评审`, and `剧本诊断`. If the user inputs `方向会`, `方案会`, or `诊断会 N`, treat them as aliases.
+
+Advisory meetings may discuss Flesh-layer quality, but they must not convert style preferences into Foundation or Skeleton gates. When an advisory meeting recommends a craft change, label it as `建议` unless it fixes source truth, canon, compliance, remake distance, or locked story function.
 
 ## Status Command Contract
 
@@ -117,6 +120,7 @@ Use this shape for `/仿写 帮助`:
 /仿写 继续 [项目目录]   恢复项目并推荐下一步，不自动生成正文
 /仿写 骨架              拆参考剧本的可复刻骨架
 /仿写 换皮              基于骨架生成换皮方向
+/仿写 出海 [方向编号]     进入海外仿写：未选方向先生成海外适配换皮方向；已选方向则生成市场迁移层
 /仿写 定案              深化选定方向为项目策划
 /仿写 集纲              生成详细分集大纲
 /仿写 写集 N            写第 N 集，必须通过 preflight

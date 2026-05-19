@@ -57,22 +57,27 @@ diff \
   ~/.claude/skills/short-drama/evals/baselines/baseline-v1.20.0-domestic.md
 ```
 
-## 6 条断言（assertions.md 完整定义）
+## 11 条断言（assertions.md 完整定义）
 
 | ID | 类型 | 简述 |
 |---|---|---|
 | A1 | mech | anchor 字段触发（全 13 题材时 creative-plan 含 anchor） |
 | A2 | mech | 开场前 1/3 字数有冲突词 |
-| A3 | mech (overseas) | 海外模式好莱坞格式 + 反中式 humiliation→power 弧 |
+| A3 | mech (overseas) | 海外模式呈现格式 + 反中式 humiliation→power 弧 |
 | A4 | mech | 自检 7 维度齐全 |
 | A5 | mixed | dramatic-truth 4 症状校验被触发（v1.19.0 新增） |
 | A6 | mixed (overseas) | 海外模式中式直译扣分扫描 |
+| A7 | mech | `CONTINUITY` 块位置与 3 字段 |
+| A8 | mech | `continuity-ledger.md` 创建与分集索引 |
+| A9 | mixed | 尾钩义务跨集承接 |
+| A10 | mech | `/导出` 与 `/分镜` 剥离 `CONTINUITY` |
+| A11 | mixed | 老项目无 ledger 时 bootstrap 轻量台账 |
 
 ## 限制（明确边界）
 
 - **不替代人工评**：voice 一致性 / 情感真实度 / 90s 节奏适配 这种主观维度仍需人工评分，eval 仅扫机器可检查项
 - **不预跑 baseline**：v1.19.0 ship 时本框架建立但未跑——下次有人写一集本子时第一次跑 = v1.19.0 baseline
-- **不覆盖跨集场景**：当前只测 ep1，跨集 used-lines 复用扫描 / 50 集长剧上下文窗口管理 等暂不在 assertion 内
+- **仅覆盖最小跨集连续性**：A7-A11 覆盖 hidden block、ledger、尾钩承接、导出/分镜剥离、老项目 bootstrap；不覆盖复杂角色弧线质量或商业账本质量
 - **题材覆盖窄**：仅 1 国内重生穿越 + 1 海外 Billionaire Romance，其他题材（古装/悬疑/末日/萌宝）后续按需扩
 
 ## 扩展原则
@@ -89,11 +94,12 @@ diff \
 ```
 evals/
 ├── README.md          ← 本文件
-├── assertions.md      ← 6 条断言完整定义
+├── assertions.md      ← 11 条断言完整定义
 ├── run.sh             ← 半手动 runner（chmod +x）
 ├── samples/
 │   ├── domestic-test.md   ← 国内固定 input（重生穿越）
-│   └── overseas-test.md   ← 海外固定 input（Billionaire Romance）
+│   ├── overseas-test.md   ← 海外固定 input（Billionaire Romance）
+│   └── continuity-phase-1a-fixture.md ← 连续性台账 fixture
 └── baselines/         ← 每个 minor/major release 一份基线（首次运行时建立）
     └── （首次跑后填充）
 ```

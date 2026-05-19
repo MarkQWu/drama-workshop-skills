@@ -1,0 +1,105 @@
+{
+  "fixture_id": "remake_overseas_command_report_only",
+  "title": "/仿写 出海 writes market adaptation report only",
+  "problem_refs": [
+    "command_layer",
+    "market_adaptation"
+  ],
+  "category": "market_adaptation_command_route",
+  "initial_project_state": {
+    "source_market": "domestic",
+    "target_market": "overseas",
+    "files_present": [
+      "manifest.yaml",
+      "01_skeleton/reference-skeleton.md",
+      "02_concepts/selected-concept.md",
+      "06_state/artifact-registry.yaml"
+    ]
+  },
+  "user_input": {
+    "text": "/仿写 出海 3",
+    "selected_concept": 3
+  },
+  "expected_route": {
+    "normalized_intent": "validate_target_market_adaptation",
+    "node_id": "market_adapt.validate",
+    "bounded_context": "short-drama-remake"
+  },
+  "expected_result": {
+    "status": "passed",
+    "body_generated": false,
+    "created_artifacts": [
+      "02_concepts/market-adaptation-report.md"
+    ],
+    "forbidden_created_artifacts": [
+      "03_plan/project-bible.md",
+      "04_outlines/episodes/ep001.execution-card.md",
+      "05_scripts/episodes/ep001.md"
+    ],
+    "downstream_unlocked": false,
+    "market_adaptation_report": {
+      "source_market": "domestic",
+      "target_market": "overseas",
+      "layer_classification": ["R0", "R1", "R2", "R3", "R4", "R5"],
+      "reference_function_map": "present",
+      "source_market_mechanism_map": "present",
+      "target_market_replacement_map": "present",
+      "must_not_carry_over": "present",
+      "overseas_genre_promise": "present",
+      "paywall_pressure": "present",
+      "distance_check": "present",
+      "blockers": [],
+      "warnings": []
+    }
+  },
+  "node_invocation_trace": {
+    "called_nodes": [
+      "market_adapt.validate"
+    ],
+    "checker_call_log": [
+      "command_layer_route",
+      "market_adaptation_report_written"
+    ],
+    "consumed_artifact_ids": [
+      "reference_skeleton",
+      "selected_concept"
+    ],
+    "consumed_report_ids": []
+  },
+  "assertions": {
+    "market_adaptation_assertion": {
+      "requires_market_adaptation": true,
+      "source_market": "domestic",
+      "target_market": "overseas",
+      "overseas_command_report_only": true,
+      "forbid_short_drama_overseas_reads": true
+    },
+    "read_trace_assertion": {
+      "actual_reads": [
+        "manifest.yaml",
+        "01_skeleton/reference-skeleton.md",
+        "02_concepts/selected-concept.md",
+        "references/market/layer-taxonomy.md",
+        "references/market/overseas-remake-rules.md",
+        "references/market/overseas-adaptation-map.md",
+        "references/market/overseas-risk-gate.md"
+      ],
+      "required_reads": [
+        "01_skeleton/reference-skeleton.md",
+        "02_concepts/selected-concept.md",
+        "references/market/layer-taxonomy.md",
+        "references/market/overseas-remake-rules.md",
+        "references/market/overseas-adaptation-map.md",
+        "references/market/overseas-risk-gate.md"
+      ],
+      "forbidden_reads_not_present": [
+        "short-drama/references/overseas/hard-rules.md",
+        "short-drama/references/overseas/anti-patterns.md",
+        "short-drama/references/overseas/dialogue-craft.md",
+        "short-drama/references/overseas/platform-knowledge.md",
+        "05_scripts/episodes/ep001.md"
+      ],
+      "enforce_default_forbidden_script_reads": true
+    }
+  }
+}

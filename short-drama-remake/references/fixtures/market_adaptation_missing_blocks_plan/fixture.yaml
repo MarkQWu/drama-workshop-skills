@@ -1,0 +1,95 @@
+{
+  "fixture_id": "market_adaptation_missing_blocks_plan",
+  "title": "Cross-market project planning requires market adaptation report",
+  "problem_refs": [
+    "market_adaptation",
+    "project_plan"
+  ],
+  "category": "market_adaptation_project_plan",
+  "initial_project_state": {
+    "source_market": "domestic",
+    "target_market": "overseas",
+    "files_present": [
+      "manifest.yaml",
+      "01_skeleton/reference-skeleton.md",
+      "02_concepts/selected-concept.md",
+      "06_state/artifact-registry.yaml"
+    ],
+    "missing_reports": [
+      "02_concepts/market-adaptation-report.md"
+    ]
+  },
+  "user_input": {
+    "text": "/仿写 定案",
+    "selected_concept": 3
+  },
+  "expected_route": {
+    "normalized_intent": "prepare_project_plan",
+    "node_id": "project_plan.prepare",
+    "bounded_context": "short-drama-remake"
+  },
+  "expected_result": {
+    "status": "blocked",
+    "body_generated": false,
+    "created_artifacts": [],
+    "forbidden_created_artifacts": [
+      "03_plan/project-bible.md"
+    ],
+    "blocking_summary": {
+      "blocking_level": "project",
+      "blocker_code": "MARKET_ADAPTATION_MISSING_OR_STALE",
+      "affected_scope": [
+        "project_plan"
+      ],
+      "user_visible_reason": "目标市场为海外，但缺少市场适配报告，不能先定案。",
+      "recommended_next_node": "market_adapt.validate",
+      "available_actions": [
+        "先执行 /仿写 出海",
+        "补齐 market-adaptation-report.md",
+        "确认目标市场后重试 /仿写 定案"
+      ]
+    }
+  },
+  "node_invocation_trace": {
+    "called_nodes": [
+      "project_plan.prepare"
+    ],
+    "checker_call_log": [
+      "market_adaptation_required"
+    ],
+    "consumed_report_ids": [],
+    "consumed_artifact_ids": [
+      "reference_skeleton",
+      "selected_concept"
+    ]
+  },
+  "assertions": {
+    "required_blockers": [
+      "MARKET_ADAPTATION_MISSING_OR_STALE"
+    ],
+    "market_adaptation_assertion": {
+      "requires_market_adaptation": true,
+      "source_market": "domestic",
+      "target_market": "overseas",
+      "market_adaptation_report_status": "missing"
+    },
+    "read_trace_assertion": {
+      "actual_reads": [
+        "manifest.yaml",
+        "01_skeleton/reference-skeleton.md",
+        "02_concepts/selected-concept.md",
+        "06_state/artifact-registry.yaml"
+      ],
+      "required_reads": [
+        "manifest.yaml",
+        "01_skeleton/reference-skeleton.md",
+        "02_concepts/selected-concept.md"
+      ],
+      "forbidden_reads_not_present": [
+        "03_plan/project-bible.md",
+        "short-drama/references/overseas/hard-rules.md"
+      ],
+      "enforce_default_forbidden_script_reads": true
+    }
+  }
+}

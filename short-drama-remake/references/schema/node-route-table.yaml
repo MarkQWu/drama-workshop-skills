@@ -44,6 +44,37 @@ nodes:
     produces_machine_report: fact_gate_report
     report_status_field: report_status
 
+  - node_id: concept.generate
+    normalized_intent: generate_skin_swap_concepts
+    bounded_context: short-drama-remake
+    consumes_canonical_artifacts:
+      - reference_skeleton
+    allowed_reference_paths:
+      - references/market/layer-taxonomy.md
+      - references/market/overseas-remake-rules.md
+      - references/market/overseas-adaptation-map.md
+    target_market_overlay:
+      - overseas concepts must be target-market adapted before selection
+      - domestic-facing concept lists cannot satisfy overseas project planning
+    produces_registry_artifact: concept_list
+
+  - node_id: market_adapt.validate
+    normalized_intent: validate_target_market_adaptation
+    bounded_context: short-drama-remake
+    consumes_canonical_artifacts:
+      - reference_skeleton
+      - concept_list
+    allowed_reference_paths:
+      - references/market/layer-taxonomy.md
+      - references/market/overseas-remake-rules.md
+      - references/market/overseas-adaptation-map.md
+      - references/market/overseas-risk-gate.md
+    produces_machine_report: market_adaptation_report
+    report_status_field: report_status
+    target_market_required_when:
+      - target_market == overseas
+      - target_market != source_market
+
   - node_id: script_draft.preflight
     user_intents: ["写第 X 集", "继续写", "接着写第 X 集"]
     normalized_intent: draft_episode_script
@@ -53,6 +84,7 @@ nodes:
       - source_integrity_report
       - reference_mapping_report
       - fact_gate_report
+      - market_adaptation_report when target_market == overseas or target_market != source_market
     consumes_canonical_artifacts:
       - execution_card
       - reference_expression_guide
@@ -83,8 +115,10 @@ nodes:
         - fact_gate_report_for_execution_card_claims
         - source_integrity_report_validity
         - reference_mapping_report_validity
+        - market_adaptation_report_validity
         - remake_risk_gate
         - artifact_registry_readability
+        - three_layer_control_boundary
         - planned_read_manifest_build
         - forbidden_read_wrapper
     output_contract:
@@ -98,15 +132,19 @@ nodes:
       - no_forbidden_read
       - body_generated_false_when_blocked
       - p10_consumes_reports_not_full_nodes
+      - preflight_does_not_block_on_flesh_only
 
   - node_id: script_draft.postflight
     normalized_intent: close_episode_script
     bounded_context: short-drama-remake
     consumes_machine_reports: [preflight_report, similarity_risk_report]
-    consumes_canonical_artifacts: [episode_script:candidate, execution_card]
+    consumes_canonical_artifacts: ["episode_script:candidate", execution_card]
     produces_machine_report: postflight_report
     report_status_field: report_status
     downstream_unlocks:
       - node_id: next_episode.resume
         route_allowed_when: postflight_report.report_status == passed
         unlock_written_by: registry_continuation_gate
+    regression_assertions:
+      - postflight_names_memorable_moment_before_quality_pass
+      - flesh_weakness_without_foundation_or_skeleton_failure_requests_revision_not_unlock

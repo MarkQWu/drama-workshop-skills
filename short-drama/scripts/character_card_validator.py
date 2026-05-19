@@ -11,6 +11,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Optional
 
 
 REQUIRED_SECTIONS = ["基础外观", "Prompt 前缀"]
@@ -26,7 +27,7 @@ def count_chinese_words(text: str) -> int:
     return chinese_chars + english_words
 
 
-def validate_card(path: Path, characters_names: set[str] | None) -> list[str]:
+def validate_card(path: Path, characters_names: Optional[set[str]]) -> list[str]:
     """校验单个角色卡，返回问题列表"""
     issues = []
     content = path.read_text(encoding="utf-8")
@@ -82,7 +83,7 @@ def validate_card(path: Path, characters_names: set[str] | None) -> list[str]:
     return issues
 
 
-def load_character_names(project_dir: Path) -> set[str] | None:
+def load_character_names(project_dir: Path) -> Optional[set[str]]:
     """从 characters.md 提取角色名列表"""
     chars_file = project_dir / "characters.md"
     if not chars_file.exists():

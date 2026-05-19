@@ -1,0 +1,12 @@
+{
+  "required_reads": [
+    "manifest.yaml",
+    "01_skeleton/reference-skeleton.md",
+    "02_concepts/selected-concept.md"
+  ],
+  "forbidden_reads_not_present": [
+    "03_plan/project-bible.md",
+    "short-drama/references/overseas/hard-rules.md"
+  ],
+  "episode_script_created": false
+}

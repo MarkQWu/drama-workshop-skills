@@ -1,3 +1,36 @@
+**v0.4.4**（2026-05-15）
+
+Tighten Overseas Boundary：`remake_gate_checker.py` 默认禁止读取 `short-drama/references/` 前缀，避免新增原创出海资料绕过隔离；`market_adaptation_report` 契约补齐 R0-R5 字段校验；`references/market/` 从占位升级为 remake-native active scaffold，用本 skill 自己的目标市场迁移分类表达海外规则。
+
+---
+
+**v0.4.3**（2026-05-15）
+
+Market Layer Taxonomy：新增 `references/market/layer-taxonomy.md`，把 `/仿写 出海` 的资料准入拆成 source truth、target market、non-transferables、target replacement、genre promise / paid pressure、similarity distance 和 script flesh。`concept.generate` / `market_adapt.validate` 明确 allowed market references，海外 concept/report 需要带 layer classification，避免 remake 直接读取原创 `short-drama/references/overseas/*`。
+
+---
+
+**v0.4.2**（2026-05-14）
+
+Overseas Concept Adaptation：`/仿写 出海` 从换皮方向阶段就进入海外目标市场，不再先生成国内方向再迁移。
+
+- `/仿写 出海` 未指定方向时，先基于骨架生成海外适配换皮方向。
+- `/仿写 出海 [方向编号]` 已选方向时，生成或刷新 `market-adaptation-report.md`。
+- 海外换皮方向必须包含 target market、海外-native 题材承诺、关系/权力语法、必须替换的源市场机制和付费压力。
+
+---
+
+**v0.4.1**（2026-05-14）
+
+Overseas Adaptation Structure：先补 `/仿写 出海` 的结构，不填满具体海外方法论。
+
+- 新增 `/仿写 出海` 命令路由，用于为选定换皮方向生成海外目标市场迁移层，不直接写正文。
+- 新增 `market_adaptation_report` artifact / report / route contract；目标市场为 overseas 或 source/target market 不一致时，正文 preflight 必须消费该报告。
+- 新增 `references/market/` 占位规则文件，后续再补具体海外平台、文化禁区和迁移规则。
+- 明确 remake 不直接读取 `short-drama/references/overseas/*`，避免原创出海规则污染复刻节点。
+
+---
+
 **v0.4.0**（2026-05-11）
 
 Command Layer：新增轻量 `/仿写` 子命令层，不改 gate/schema/checker。

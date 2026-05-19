@@ -179,6 +179,94 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertEqual(self.check_ids(report), {"RUNTIME_POLICY_FALSE"})
 
+    def test_sibling_runtime_drift_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="short-drama-gate-sibling-runtime-") as tmp:
+            tmp_path = Path(tmp)
+            for package, version in (("short-drama", "1.0.0"), ("short-drama-remake", "2.0.0")):
+                package_root = tmp_path / package
+                package_root.mkdir()
+                (package_root / "SKILL.md").write_text(
+                    f"---\nname: {package}\ndescription: fixture\n---\n",
+                    encoding="utf-8",
+                )
+                (package_root / "VERSION").write_text(f"{version}\n", encoding="utf-8")
+
+            runtime_parent = tmp_path / "runtime"
+            for package, version in (("short-drama", "1.0.0"), ("short-drama-remake", "0.1.0")):
+                runtime_root = runtime_parent / package
+                runtime_root.mkdir(parents=True)
+                (runtime_root / "SKILL.md").write_text(
+                    f"---\nname: {package}\ndescription: fixture\n---\n",
+                    encoding="utf-8",
+                )
+                (runtime_root / "VERSION").write_text(f"{version}\n", encoding="utf-8")
+
+            manifest = self.load_real_manifest()
+            manifest["package_root"] = "short-drama"
+            manifest["distribution_repo"]["package_roots"] = ["short-drama", "short-drama-remake"]
+            manifest["distribution_repo"]["installers"] = []
+            manifest["runtime_roots"] = [
+                {
+                    "name": "fixture-runtime",
+                    "path": str(runtime_parent / "short-drama"),
+                    "policy": "generated_copy",
+                    "required": True,
+                }
+            ]
+            manifest_path = write_manifest(tmp_path / "release-manifest.json", manifest)
+
+            result, report = run_gate_json(
+                "--dry-run",
+                "--manifest",
+                str(manifest_path),
+                "--check",
+                "RUNTIME_POLICY_FALSE",
+            )
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(self.check_ids(report), {"RUNTIME_POLICY_FALSE"})
+        self.assertIn("fixture-runtime:short-drama-remake", json.dumps(report, ensure_ascii=False))
+
+    def test_canonical_symlink_policy_rejects_real_runtime_directory(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="short-drama-gate-canonical-symlink-") as tmp:
+            tmp_path = Path(tmp)
+            package = tmp_path / "short-drama"
+            runtime = tmp_path / "runtime" / "short-drama"
+            for root in (package, runtime):
+                root.mkdir(parents=True)
+                (root / "SKILL.md").write_text(
+                    "---\nname: short-drama\ndescription: fixture\n---\n",
+                    encoding="utf-8",
+                )
+                (root / "VERSION").write_text("1.0.0\n", encoding="utf-8")
+
+            manifest = self.load_real_manifest()
+            manifest["package_root"] = str(package)
+            manifest["distribution_repo"]["package_roots"] = ["short-drama"]
+            manifest["distribution_repo"]["installers"] = []
+            manifest["runtime_roots"] = [
+                {
+                    "name": "fixture-runtime",
+                    "path": str(runtime),
+                    "policy": "canonical_symlink",
+                    "required": True,
+                }
+            ]
+            manifest["sibling_skills"] = []
+            manifest_path = write_manifest(tmp_path / "release-manifest.json", manifest)
+
+            result, report = run_gate_json(
+                "--dry-run",
+                "--manifest",
+                str(manifest_path),
+                "--check",
+                "RUNTIME_POLICY_FALSE",
+            )
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(self.check_ids(report), {"RUNTIME_POLICY_FALSE"})
+        self.assertIn("not-canonical-symlink", json.dumps(report, ensure_ascii=False))
+
     def test_package_surface_scope_checks_pass_current_package(self) -> None:
         for check_id in (
             "FRONTMATTER_PARSE",

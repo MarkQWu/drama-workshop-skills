@@ -254,6 +254,8 @@
 
 ## 出海题材指南
 
+> **使用边界：** 本节是 `references/overseas/layer-index.md` 的 L2 题材承诺入口，不是 hard gate，也不是“国内题材直译表”。用于头脑风暴时，必须先用 `overseas/hard-rules.md` 与 `overseas/anti-patterns.md` 排除 domestic transplant，再把题材改写成目标市场原生的 genre promise。
+
 ### 文化映射表
 
 | 国内题材 | 欧美对应 | 东南亚对应 | 中东对应 |
@@ -434,7 +436,7 @@
 ### 集数规模
 
 - A. 迷你剧 30集 — 节奏极快，适合试水
-- B. 标准剧 60集 — 最主流（推荐）
+- B. 标准剧 60集 — 国内默认建议；出海项目按 `overseas/platform-knowledge.md` 使用 50-100 / 60-80 typical 或用户 brief，不硬编码 60
 - C. 长篇剧 80集 — 多线并行
 - D. 超长篇 100集 — 需强主线支撑
 - E. 自定义

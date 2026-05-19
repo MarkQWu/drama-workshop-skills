@@ -153,7 +153,7 @@ C) [社会母体 C]——…
 | 抖音 | 都市情感/职场/爽感密集，节奏≤90s/集，付费墙早 |
 | 快手 | 家庭伦理/萌宝/农村逆袭，共情浓，IAA 为主 |
 | 红果 | 精品长集，IP 翻拍/古装，投拍级画质 |
-| 出海（ReelShort/DramaBox）| mafia/werewolf/dark romance，英文，付费墙 ep5 前 |
+| 出海（ReelShort/DramaBox）| mafia/werewolf/dark romance，英语市场/海外平台，付费墙 ep5 前 |
 
 输出格式（一句话）：
 

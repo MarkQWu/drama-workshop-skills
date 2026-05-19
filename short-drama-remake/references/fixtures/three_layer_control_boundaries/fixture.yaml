@@ -1,0 +1,84 @@
+{
+  "fixture_id": "three_layer_control_boundaries",
+  "title": "Three-layer control keeps flesh concerns out of preflight hard gates",
+  "problem_refs": ["three-layer-control"],
+  "category": "control_layer",
+  "initial_project_state": {
+    "source_scope": "complete",
+    "registered_artifacts": [
+      "reference_skeleton",
+      "reference_expression_guide",
+      "factor_scorecard",
+      "execution_card",
+      "project_state"
+    ]
+  },
+  "user_input": {
+    "text": "/仿写 写集 12"
+  },
+  "expected_route": {
+    "normalized_intent": "draft_episode_script",
+    "node_id": "script_draft.preflight",
+    "bounded_context": "short-drama-remake"
+  },
+  "expected_result": {
+    "status": "passed",
+    "body_generated": false,
+    "created_artifacts": [
+      "08_reports/preflight/PFR-episode_012.yaml"
+    ],
+    "three_layer_control_boundary": {
+      "blocking_layers": [
+        "foundation",
+        "skeleton"
+      ],
+      "warning_layers": [
+        "flesh"
+      ],
+      "free_zones": [
+        "dialogue_wording",
+        "micro_actions",
+        "sensory_detail",
+        "sentence_rhythm"
+      ],
+      "postflight_questions": [
+        "memorable_moment"
+      ]
+    }
+  },
+  "node_invocation_trace": {
+    "called_nodes": [
+      "script_draft.preflight"
+    ],
+    "checker_call_log": [
+      "three_layer_control_boundary"
+    ],
+    "forbidden_full_node_calls": [
+      "resume.restore",
+      "source.validate",
+      "reference_map.validate",
+      "fact_gate.validate"
+    ],
+    "consumed_report_ids": [
+      "SIR-001",
+      "RMR-012-001",
+      "FGR-012-001"
+    ],
+    "consumed_artifact_ids": [
+      "EC-012",
+      "REG-001"
+    ]
+  },
+  "assertions": {
+    "three_layer_control_assertion": {
+      "preflight_blocks_only_foundation_or_skeleton": true,
+      "required_free_zones": [
+        "dialogue_wording",
+        "micro_actions",
+        "sensory_detail",
+        "sentence_rhythm"
+      ],
+      "requires_memorable_moment_question": true
+    }
+  }
+}

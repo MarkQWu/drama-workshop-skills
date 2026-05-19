@@ -1,0 +1,97 @@
+{
+  "fixture_id": "remake_overseas_command_generates_overseas_concepts",
+  "title": "/仿写 出海 without selected concept generates overseas-adapted concepts",
+  "problem_refs": [
+    "command_layer",
+    "market_adaptation",
+    "concept_generation"
+  ],
+  "category": "market_adaptation_command_route",
+  "initial_project_state": {
+    "source_market": "domestic",
+    "target_market": "overseas",
+    "files_present": [
+      "manifest.yaml",
+      "01_skeleton/reference-skeleton.md",
+      "06_state/artifact-registry.yaml"
+    ]
+  },
+  "user_input": {
+    "text": "/仿写 出海"
+  },
+  "expected_route": {
+    "normalized_intent": "generate_skin_swap_concepts",
+    "node_id": "concept.generate",
+    "bounded_context": "short-drama-remake"
+  },
+  "expected_result": {
+    "status": "passed",
+    "body_generated": false,
+    "created_artifacts": [
+      "02_concepts/concepts-overseas.md"
+    ],
+    "forbidden_created_artifacts": [
+      "02_concepts/market-adaptation-report.md",
+      "03_plan/project-bible.md",
+      "05_scripts/episodes/ep001.md"
+    ],
+    "downstream_unlocked": false
+  },
+  "node_invocation_trace": {
+    "called_nodes": [
+      "concept.generate"
+    ],
+    "checker_call_log": [
+      "command_layer_route",
+      "overseas_concepts_from_start"
+    ],
+    "consumed_artifact_ids": [
+      "reference_skeleton"
+    ],
+    "consumed_report_ids": []
+  },
+  "assertions": {
+    "market_adaptation_assertion": {
+      "requires_market_adaptation": true,
+      "source_market": "domestic",
+      "target_market": "overseas",
+      "overseas_concepts_from_start": true,
+      "expected_concept_artifact": "02_concepts/concepts-overseas.md",
+      "required_overseas_concept_fields": [
+        "target_market",
+        "layer_classification",
+        "overseas_genre_promise",
+        "relationship_grammar",
+        "status_or_power_system",
+        "source_mechanisms_to_replace",
+        "paywall_pressure",
+        "similarity_risk_note"
+      ],
+      "forbid_short_drama_overseas_reads": true
+    },
+    "read_trace_assertion": {
+      "actual_reads": [
+        "manifest.yaml",
+        "01_skeleton/reference-skeleton.md",
+        "references/market/layer-taxonomy.md",
+        "references/market/overseas-remake-rules.md",
+        "references/market/overseas-adaptation-map.md"
+      ],
+      "required_reads": [
+        "01_skeleton/reference-skeleton.md",
+        "references/market/layer-taxonomy.md",
+        "references/market/overseas-remake-rules.md",
+        "references/market/overseas-adaptation-map.md"
+      ],
+      "forbidden_reads_not_present": [
+        "short-drama/references/overseas/hard-rules.md",
+        "short-drama/references/overseas/anti-patterns.md",
+        "short-drama/references/overseas/dialogue-craft.md",
+        "short-drama/references/overseas/platform-knowledge.md",
+        "03_plan/project-bible.md",
+        "05_scripts/episodes/ep001.md"
+      ],
+      "enforce_default_forbidden_script_reads": true
+    }
+  }
+}

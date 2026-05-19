@@ -7,6 +7,8 @@ purpose: >
 project:
   project_id: string
   project_mode: remake
+  source_market: [domestic, overseas, unknown]
+  target_market: [domestic, overseas, unknown]
   project_root: path
   created_at: ISO-8601
   updated_at: ISO-8601
@@ -56,6 +58,7 @@ artifact_types:
   - reference_expression_guide
   - factor_scorecard
   - reference_map
+  - market_adaptation_report
   - concept_list
   - project_bible
   - characters
@@ -85,15 +88,33 @@ read_policy:
       artifact_status: accepted
       gate_status: [passed, passed_with_deferred_risk]
       current_pointer: required
-      decision_id: required
-      last_transaction_id: committed_in_transaction_ledger
+
+artifact_requirements:
+  concept_list:
+    required_metadata:
+      - source_market
+      - target_market
+      - layer_classification
+    overseas_required_when:
+      - target_market == overseas
+    overseas_concept_must_include:
+      - target_market
+      - layer_classification
+      - overseas_genre_promise
+      - relationship_grammar
+      - status_or_power_system
+      - source_mechanisms_to_replace
+      - paywall_pressure
+    decision_id: required
+    last_transaction_id: committed_in_transaction_ledger
   machine_report:
     requires:
       artifact_status: accepted
       report_status: [passed]
+      evidence_refs: required_when_market_adaptation
+      freshness: not_stale
       decision_id: not_required
       current_pointer: not_required
-      freshness: not_stale
 
 current_pointers_item:
   required_fields:

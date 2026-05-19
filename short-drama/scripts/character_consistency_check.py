@@ -14,6 +14,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Optional
 
 
 # ── 外貌锚定词表 ──────────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ EYE_COLOR_GROUPS = {
 }
 
 
-def get_color_group(word: str, groups: dict) -> str | None:
+def get_color_group(word: str, groups: dict) -> Optional[str]:
     for group_name, members in groups.items():
         if word in members:
             return group_name
@@ -134,7 +135,7 @@ def extract_appearance_anchors(appearance_text: str) -> dict:
 
 # ── 集数文件获取 ──────────────────────────────────────────────────────────────
 
-def get_episode_files(project_dir: Path, ep_range: tuple | None = None) -> list[Path]:
+def get_episode_files(project_dir: Path, ep_range: Optional[tuple] = None) -> list[Path]:
     episodes_dir = project_dir / "episodes"
     if not episodes_dir.exists():
         return []
@@ -270,7 +271,7 @@ def scan_episode(ep_path: Path, char: dict) -> list[dict]:
 
 # ── 主流程 ───────────────────────────────────────────────────────────────────
 
-def parse_ep_range(s: str | None) -> tuple | None:
+def parse_ep_range(s: Optional[str]) -> Optional[tuple]:
     if not s:
         return None
     m = re.match(r"^(\d+)(?:-(\d+))?$", s)

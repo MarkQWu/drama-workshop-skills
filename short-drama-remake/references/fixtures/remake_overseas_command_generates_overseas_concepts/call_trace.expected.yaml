@@ -1,0 +1,6 @@
+{
+  "called_nodes": ["concept.generate"],
+  "checker_call_log_contains": ["command_layer_route", "overseas_concepts_from_start"],
+  "consumed_artifact_ids": ["reference_skeleton"],
+  "forbidden_full_node_calls_not_present": ["market_adapt.validate", "project_plan.prepare", "script_draft.generate"]
+}

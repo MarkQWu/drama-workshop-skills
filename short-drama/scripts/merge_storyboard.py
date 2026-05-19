@@ -12,6 +12,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Optional
 
 
 def parse_episode_range(spec: str) -> list[int]:
@@ -27,7 +28,7 @@ def parse_episode_range(spec: str) -> list[int]:
     return sorted(set(episodes))
 
 
-def find_storyboard_files(storyboards_dir: Path, episodes: list[int] | None) -> list[Path]:
+def find_storyboard_files(storyboards_dir: Path, episodes: Optional[list[int]]) -> list[Path]:
     """查找分镜文件，按集数排序"""
     if episodes is None:  # --all
         files = sorted(storyboards_dir.glob("ep*-storyboard.md"))

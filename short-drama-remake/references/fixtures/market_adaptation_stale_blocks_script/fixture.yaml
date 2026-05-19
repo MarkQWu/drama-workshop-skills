@@ -1,0 +1,102 @@
+{
+  "fixture_id": "market_adaptation_stale_blocks_script",
+  "title": "Stale market adaptation report blocks overseas script drafting",
+  "problem_refs": [
+    "market_adaptation",
+    "script_draft.preflight"
+  ],
+  "category": "market_adaptation_script_preflight",
+  "initial_project_state": {
+    "source_market": "domestic",
+    "target_market": "overseas",
+    "files_present": [
+      "manifest.yaml",
+      "02_concepts/market-adaptation-report.md",
+      "03_plan/project-bible.md",
+      "04_outlines/episodes/ep012.execution-card.md",
+      "06_state/project-state.md"
+    ],
+    "report_statuses": {
+      "market_adaptation_report": "stale"
+    }
+  },
+  "user_input": {
+    "text": "/仿写 写集 12",
+    "target_episode_no": 12
+  },
+  "expected_route": {
+    "normalized_intent": "draft_episode_script",
+    "node_id": "script_draft.preflight",
+    "bounded_context": "short-drama-remake"
+  },
+  "expected_result": {
+    "status": "blocked",
+    "body_generated": false,
+    "created_artifacts": [],
+    "forbidden_created_artifacts": [
+      "05_scripts/episodes/ep012.md"
+    ],
+    "blocking_summary": {
+      "blocking_level": "episode",
+      "blocker_code": "MARKET_ADAPTATION_MISSING_OR_STALE",
+      "affected_scope": [
+        "episode_012_script"
+      ],
+      "user_visible_reason": "市场适配报告已过期，不能据此生成海外仿写正文。",
+      "recommended_next_node": "market_adapt.validate",
+      "available_actions": [
+        "刷新 market-adaptation-report.md",
+        "重新确认目标市场",
+        "暂缓正文生成"
+      ]
+    }
+  },
+  "node_invocation_trace": {
+    "called_nodes": [
+      "script_draft.preflight"
+    ],
+    "checker_call_log": [
+      "market_adaptation_report_validity"
+    ],
+    "consumed_report_ids": [
+      "source_integrity_report",
+      "reference_mapping_report",
+      "fact_gate_report",
+      "market_adaptation_report"
+    ],
+    "forbidden_full_node_calls": [
+      "resume.restore",
+      "source.validate",
+      "reference_map.validate",
+      "fact_gate.validate"
+    ]
+  },
+  "assertions": {
+    "required_blockers": [
+      "MARKET_ADAPTATION_MISSING_OR_STALE"
+    ],
+    "market_adaptation_assertion": {
+      "requires_market_adaptation": true,
+      "source_market": "domestic",
+      "target_market": "overseas",
+      "market_adaptation_report_status": "stale"
+    },
+    "read_trace_assertion": {
+      "actual_reads": [
+        "manifest.yaml",
+        "02_concepts/market-adaptation-report.md",
+        "03_plan/project-bible.md",
+        "04_outlines/episodes/ep012.execution-card.md",
+        "06_state/project-state.md"
+      ],
+      "required_reads": [
+        "02_concepts/market-adaptation-report.md"
+      ],
+      "forbidden_reads_not_present": [
+        "05_scripts/episodes/ep012.md",
+        "short-drama/references/overseas/hard-rules.md"
+      ],
+      "enforce_default_forbidden_script_reads": true
+    }
+  }
+}

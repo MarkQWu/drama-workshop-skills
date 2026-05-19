@@ -1,6 +1,6 @@
 # 爆款剧本工坊 | Drama Workshop
 
-**当前版本：v1.31.15**（2026-05-11）· 版本历史见 [GitHub Releases](https://github.com/MarkQWu/drama-workshop-skills/releases) · 小白看 [使用说明](short-drama/使用说明.md)
+**当前版本：v1.32.1**（2026-05-19）· 版本历史见 [GitHub Releases](https://github.com/MarkQWu/drama-workshop-skills/releases) · 小白看 [使用说明](short-drama/使用说明.md)
 
 用 AI 写能拍的微短剧，也能拆解参考短剧做换皮复刻——从选题到分镜，一条命令链走完。
 
@@ -13,15 +13,18 @@
 - **short-drama**：原创短剧主流程，负责 `/开始`、`/策划`、`/分集`、`/分镜`、`/导出`
 - **short-drama-remake**：参考剧本拆解复刻，负责参考剧本 ingest、可复刻骨架、换皮方向、集纲和正式剧本
 
-- **剧本创作**：50-100 集完整微短剧（国内+出海双模式），自带爽点矩阵、付费卡点设计
+- **剧本创作**：50-100 集完整微短剧（国内+出海双模式），国内用爽点矩阵/付费卡点，出海用 target market / genre promise / paid pressure 分层；出海默认中文呈现，角色名保留英文
 - **拆解复刻**：从参考剧本提炼商业骨架，生成换皮方向、项目策划、详细集纲和正式剧本
 - **质量管控**：7 维度 + 考据可追溯 8 维度自检（先推理再评分）、AI Slop 检测、过稿预估、不合格阻断导出
+- **三层控制模型**（v1.31.19 起）：原创创作按地基层 / 骨架层 / 血肉层分级，区分必须阻断、结构修复和创作建议，避免规则不足或过度模板化
+- **商业账本**（v1.32.1 起）：国内原创会追踪观众买单理由、付费卡点、爽点兑现和反派压力轨迹，避免只写事件不写商业因果
+- **出海资料分层**（v1.31.22 起完善）：按平台事实、目标市场、题材承诺、关系/权力语法、结构付费压力、媒介可拍、对白工艺、合规/IP 和反污染分类；hard gate、review、soft craft 分级，避免把国内模板或长剧范式带进海外项目
 - **分镜输出**：剧本→逐镜分镜表 + [即梦 AI](https://jimeng.jianying.com) prompt，一步生成视频
 - **Anchor 触发机制**（v1.23.0 起全 13 题材）：`/创作方案` 根据选定题材自动推荐中文现象级 IP（覆盖都市情感 / 霸道总裁 / 甜宠 / 重生穿越 / 古装宫廷 / 励志逆袭 / 悬疑探案 / 战神归来 / 家庭伦理 / 萌宝 / 软科幻 / 末日重生 / 喜剧全部 13 题材），借世界观厚度 / 角色调性 / 情绪锚点，**不借节奏**（节奏仍由 skill 自身规则硬约束）
 - **付费卡点商业模式分层**（v1.14.0 起）：IAP / IAA / 混合三种付费结构分开设计，适配国内 IAA 主导市场
 - **多项目管理**（v1.13.0 起）：`/开始` 先问新建/继续，选继续再按需扫描，`/新建 剧名` 直接开新本，互不干扰，WorkBuddy 用户零切换目录
 - **跨集角色一致性**（v1.21.0 起）：`/角色一致性` 脚本层（年龄/发色/眼色/身高矛盾）+ LLM 语义层（性格/动机/弧线漂移）两层扫描，定位到具体集数和上下文
-- **对白规则分化**（v1.31.1 起）：国内模式 `**角色名**：台词` 禁双引号，出海模式保留好莱坞标准；剧本正文破折号完全禁用
+- **呈现格式分化**：`/出海` 默认中文短剧格式 + 中文对白，角色名保留英文；只有 `/出海 英文交付` 或明确要求英文投稿稿时才使用英文 + Hollywood 格式；剧本正文破折号完全禁用
 
 ## 安装
 
@@ -40,6 +43,8 @@ irm https://raw.githubusercontent.com/MarkQWu/drama-workshop-skills/main/install
 ```
 
 安装完成后**关闭当前会话，重新打开**，输入 `/开始` 看到引导就说明装好了。
+
+安装脚本会自动让 Claude / Codex / OpenClaw / WorkBuddy 共用同一份本地 Skill，普通使用和 `/更新` 不需要处理目录路径。
 
 安装脚本会自动把 `~/.workbuddy/skills/.trash`、`~/.openclaw/skills/.trash`、`~/.codex/skills/.trash`、`~/.claude/skills/.trash` 这类旧备份迁移到同级 `.skill-trash/`，避免 WorkBuddy 递归扫描旧版 `SKILL.md`。
 
@@ -142,7 +147,7 @@ AI：把第一集拆成逐镜分镜表，每个镜头附带即梦 AI prompt ↓
 - **续写**：`/分集 next` 自动写下一集
 - **自动修复**：`/自检 3 --fix` 检查完直接帮你改
 - **只拆分镜**：`/分镜` 可独立使用，直接粘贴任意文本就能拆
-- **海外项目**：海外英文 vertical drama（ReelShort / DramaBox / mafia romance / dark romance 等）由主 skill 内置支持，输入 `/出海` 命令切换为出海模式即可（v1.19.0 起）
+- **海外项目**：海外 vertical drama（ReelShort / DramaBox / mafia romance / dark romance 等）由主 skill 内置支持，输入 `/出海` 命令切换为出海内容规则；默认中文呈现，角色名保留英文。需要英文投稿稿时用 `/出海 英文交付`
 
 ## 命令速查
 
@@ -158,7 +163,8 @@ AI：把第一集拆成逐镜分镜表，每个镜头附带即梦 AI prompt ↓
 | `/自检 {N}` | 7 维度质检 + AI Slop 检测（`--fix` 自动修复） |
 | `/合规` | 国内发行合规审核 |
 | `/导出` | 打包完整剧本（自检 <30 分会拦截） |
-| `/出海` | 切换为出海模式（好莱坞格式 + 英文输出 + ReelShort/DramaBox 平台规格） |
+| `/出海` | 切换为出海内容规则（默认中文呈现 + 中文短剧格式，角色名保留英文） |
+| `/出海 英文交付` | 切换为英文 + Hollywood 格式，用于海外平台投稿稿 |
 
 ### 拆解复刻
 
@@ -168,6 +174,7 @@ AI：把第一集拆成逐镜分镜表，每个镜头附带即梦 AI prompt ↓
 | `/仿写 帮助` | 查看复刻流程、子命令和换新对话恢复方法 |
 | `/仿写 状态 PROJECT_DIR` | 只读查看复刻项目进度、已生成文件和下一步 |
 | `/仿写 继续 PROJECT_DIR` | 恢复复刻项目并推荐下一步，不自动写正文 |
+| `/仿写 出海` | 为选定复刻方向生成海外目标市场迁移层，不直接写正文 |
 | `/仿写 写集 N` | 写第 N 集，仍必须通过 remake preflight/postflight |
 | `/仿写 方向会` / `/仿写 方案会` / `/仿写 诊断会 N` | 可选评审入口，不解锁 gate |
 | `$short-drama-remake` | 显式调用参考剧本拆解复刻能力，适合长剧本 ingest、换皮方向、集纲和正式剧本 |
@@ -246,8 +253,8 @@ stamp=$(date +%Y%m%d-%H%M%S)
 mkdir -p ~/.claude/skills ~/.claude/.skill-trash/manual-$stamp
 [ -d ~/.claude/skills/short-drama ] && mv ~/.claude/skills/short-drama ~/.claude/.skill-trash/manual-$stamp/
 [ -d ~/.claude/skills/short-drama-remake ] && mv ~/.claude/skills/short-drama-remake ~/.claude/.skill-trash/manual-$stamp/
-cp -r drama-workshop-skills/short-drama ~/.claude/skills/short-drama
-cp -r drama-workshop-skills/short-drama-remake ~/.claude/skills/short-drama-remake
+ln -s "$(pwd)/drama-workshop-skills/short-drama" ~/.claude/skills/short-drama
+ln -s "$(pwd)/drama-workshop-skills/short-drama-remake" ~/.claude/skills/short-drama-remake
 ```
 
 **Codex / OpenClaw / WorkBuddy 用户：**
@@ -266,12 +273,12 @@ mkdir -p ~/.codex/skills ~/.openclaw/skills ~/.workbuddy/skills ~/.codex/.skill-
 [ -d ~/.codex/skills/short-drama-remake ] && mv ~/.codex/skills/short-drama-remake ~/.codex/.skill-trash/manual-$stamp/
 [ -d ~/.openclaw/skills/short-drama-remake ] && mv ~/.openclaw/skills/short-drama-remake ~/.openclaw/.skill-trash/manual-$stamp/
 [ -d ~/.workbuddy/skills/short-drama-remake ] && mv ~/.workbuddy/skills/short-drama-remake ~/.workbuddy/.skill-trash/manual-$stamp/
-cp -r drama-workshop-skills/short-drama ~/.codex/skills/short-drama    # Codex
-cp -r drama-workshop-skills/short-drama ~/.openclaw/skills/short-drama   # OpenClaw
-cp -r drama-workshop-skills/short-drama ~/.workbuddy/skills/short-drama  # WorkBuddy
-cp -r drama-workshop-skills/short-drama-remake ~/.codex/skills/short-drama-remake    # Codex
-cp -r drama-workshop-skills/short-drama-remake ~/.openclaw/skills/short-drama-remake   # OpenClaw
-cp -r drama-workshop-skills/short-drama-remake ~/.workbuddy/skills/short-drama-remake  # WorkBuddy
+ln -s "$(pwd)/drama-workshop-skills/short-drama" ~/.codex/skills/short-drama    # Codex
+ln -s "$(pwd)/drama-workshop-skills/short-drama" ~/.openclaw/skills/short-drama   # OpenClaw
+ln -s "$(pwd)/drama-workshop-skills/short-drama" ~/.workbuddy/skills/short-drama  # WorkBuddy
+ln -s "$(pwd)/drama-workshop-skills/short-drama-remake" ~/.codex/skills/short-drama-remake    # Codex
+ln -s "$(pwd)/drama-workshop-skills/short-drama-remake" ~/.openclaw/skills/short-drama-remake   # OpenClaw
+ln -s "$(pwd)/drama-workshop-skills/short-drama-remake" ~/.workbuddy/skills/short-drama-remake  # WorkBuddy
 ```
 
 手动安装前，如果 `~/.workbuddy/skills/.trash`、`~/.openclaw/skills/.trash`、`~/.codex/skills/.trash` 或 `~/.claude/skills/.trash` 存在，请先把它们移动到同级 `.skill-trash/`，不要留在 `skills/` 目录内。

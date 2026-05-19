@@ -4,9 +4,9 @@ set -euo pipefail
 
 REPO_GITHUB="https://github.com/MarkQWu/drama-workshop-skills.git"
 REPO_MIRROR="https://ghfast.top/https://github.com/MarkQWu/drama-workshop-skills.git"
-CACHE="$HOME/.claude/.skill-repos/drama-workshop-skills"
+CACHE="$HOME/.gobuildit/skill-repos/drama-workshop-skills"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
-OPENCLAW_SKILLS_DIR="$HOME/.openclaw/skills"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && { pwd -P || pwd; })"
 
 # 解析参数
 MCP_ONLY=0
@@ -200,7 +200,8 @@ migrate_embedded_trash() {
   local owner_dir
   owner_dir="$(dirname "$skills_dir")"
   local safe_root="$owner_dir/.skill-trash"
-  local dest="$safe_root/from-skills-trash-$(timestamp)"
+  local dest
+  dest="$safe_root/from-skills-trash-$(timestamp)"
 
   mkdir -p "$safe_root"
   if [ -e "$dest" ]; then
@@ -269,13 +270,19 @@ try_pull() {
   try_clone "$dir"
 }
 
-# Clone 或更新仓库到缓存目录
-mkdir -p "$(dirname "$CACHE")"
-if [ -d "$CACHE/.git" ]; then
-  try_pull "$CACHE"
+# Clone 或更新仓库到唯一 canonical 目录。
+# 本地从完整 repo 运行时直接引用当前 checkout；curl | bash 时使用 ~/.gobuildit/skill-repos 下的唯一缓存 repo。
+if [ -f "$SCRIPT_DIR/short-drama/SKILL.md" ] && [ -d "$SCRIPT_DIR/.git" ]; then
+  CACHE="$SCRIPT_DIR"
+  echo "使用本地仓库安装。"
 else
-  [ -d "$CACHE" ] && mv "$CACHE" "$CACHE.backup-$(timestamp)" 2>/dev/null || true
-  try_clone "$CACHE"
+  mkdir -p "$(dirname "$CACHE")"
+  if [ -d "$CACHE/.git" ]; then
+    try_pull "$CACHE"
+  else
+    if [ -d "$CACHE" ]; then mv "$CACHE" "$CACHE.backup-$(timestamp)" 2>/dev/null || true; fi
+    try_clone "$CACHE"
+  fi
 fi
 
 if [ ! -d "$CACHE" ]; then
@@ -309,12 +316,17 @@ if [ ${#targets[@]} -eq 0 ]; then
   targets+=("$CLAUDE_SKILLS_DIR")
 fi
 
+# skills/<name> 只保留 symlink，内容只存在于 $CACHE。
 for skills_dir in "${targets[@]}"; do
   migrate_embedded_trash "$skills_dir"
   for d in "$CACHE"/*/; do
     if [ -f "$d/SKILL.md" ]; then
       skill_name="$(basename "$d")"
       target="$skills_dir/$skill_name"
+      if [ -L "$target" ] && [ "$(readlink "$target")" = "${d%/}" ]; then
+        installed=$((installed + 1))
+        continue
+      fi
       if [ -e "$target" ] || [ -L "$target" ]; then
         safe_root="$(dirname "$skills_dir")/.skill-trash"
         mkdir -p "$safe_root"
@@ -323,20 +335,33 @@ for skills_dir in "${targets[@]}"; do
           continue
         }
       fi
-      cp -r "$d" "$target"
+      ln -s "${d%/}" "$target"
       installed=$((installed + 1))
     fi
   done
 done
 
-# 设置可执行权限（bin/ 目录下的脚本）
-for skills_dir in "${targets[@]}"; do
-  for d in "$skills_dir"/*/; do
-    if [ -d "$d/bin" ]; then
-      chmod +x "$d/bin/"* 2>/dev/null || true
-    fi
-  done
+# 设置可执行权限（canonical repo 的 bin/ 目录）
+for d in "$CACHE"/*/; do
+  if [ -d "$d/bin" ]; then
+    chmod +x "$d/bin/"* 2>/dev/null || true
+  fi
 done
+
+check_duplicate_real_dirs() {
+  for skills_dir in "${targets[@]}"; do
+    for source_dir in "$CACHE"/*/; do
+      if [ -f "$source_dir/SKILL.md" ]; then
+        skill_name="$(basename "$source_dir")"
+        target="$skills_dir/$skill_name"
+        if [ -f "$target/SKILL.md" ] && [ ! -L "$target" ]; then
+          echo "  警告：发现实体 skill 目录仍存在：$target。请移到同级 .skill-trash，避免多版本并存。" >&2
+        fi
+      fi
+    done
+  done
+}
+check_duplicate_real_dirs
 
 # 读取版本号（来自仓库 VERSION 文件，由发版流程维护）
 version=""
@@ -358,9 +383,6 @@ fi
 echo ""
 if [ "$installed" -gt 0 ]; then
   echo "安装成功！"
-  for t in "${targets[@]}"; do
-    echo "  → $t"
-  done
   echo ""
   echo "版本：$version"
   echo ""

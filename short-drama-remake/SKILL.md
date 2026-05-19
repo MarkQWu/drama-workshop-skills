@@ -6,7 +6,7 @@ description: Analyze reference short-drama scripts or screen-recorded prompt wor
 # Short Drama Remake
 
 > License: SKILL.md, agents metadata, scripts, and bundled code are MIT; references are gobuildit methodology documentation with all rights reserved except use as part of this skill distribution.
-> Version: 0.4.0
+> Version: 0.4.4
 
 ## Core Rule
 
@@ -15,6 +15,8 @@ Treat "1:1 remake" as **story-function replication**, not copying protected expr
 Match the user's current working language by default. If the user writes in Chinese, respond in Chinese; if the user writes in English, respond in English. Keep screenplay headings, dialogue, prompts, and audits in that same working language unless the user explicitly asks for another language. English skill instructions are internal control text; do not let them leak into screenplay language, character dialogue, headings, or user-facing prompts.
 
 If the source text, screenshot, or video frame is unclear, mark the uncertain part as `[待确认]` instead of inventing it.
+
+Use [references/three-layer-control.md](references/three-layer-control.md) as the control boundary for all remake stages: Foundation rules are hard gates, Skeleton rules lock story function while freeing implementation, and Flesh rules protect creative texture. Do not use foundation-level strictness to police dialogue wording, micro-actions, sensory detail, or sentence rhythm unless they violate canon, compliance, source truth, or remake distance.
 
 ## User Guidance Surface
 
@@ -50,6 +52,7 @@ Core subcommands:
 - `/仿写 帮助`: show remake command help, file structure, and recovery examples.
 - `/仿写 骨架`: run the reference skeleton stage.
 - `/仿写 换皮`: run the skin-swap concept stage.
+- `/仿写 出海`: enter overseas-target remake mode. Without a selected concept, generate overseas-adapted skin-swap concepts; with a selected concept number/text, create or refresh the target-market adaptation report.
 - `/仿写 定案`: deepen the selected concept into a project plan.
 - `/仿写 集纲`: create detailed episode outlines.
 - `/仿写 写集 N`: route to the existing managed script drafting path; `script_draft.preflight` remains mandatory.
@@ -69,8 +72,9 @@ Keep each stage dependent on the previous artifact. If the user asks for a downs
 
 Required upstream artifacts:
 
-- **Concept generation** requires a reusable skeleton table or equivalent拆解.
-- **Project planning** requires the skeleton plus a selected concept number or concept text.
+- **Concept generation** requires a reusable skeleton table or equivalent拆解. If `target_market=overseas`, concept generation must produce overseas-adapted directions from the start, not domestic concepts for later translation.
+- **Overseas adaptation** requires the skeleton plus a selected overseas-adapted concept number or concept text. It produces a market adaptation report, not a script body.
+- **Project planning** requires the skeleton plus a selected concept number or concept text. If `target_market` is overseas or differs from `source_market`, it also requires an accepted `market_adaptation_report`; otherwise run `/仿写 出海` first and do not create `project-bible.md`.
 - **Episode outlining** requires the skeleton plus the selected project plan.
 - **Script drafting** requires the project plan plus the target episode outline and episode number.
 
@@ -88,6 +92,8 @@ For managed remake projects, use the Phase 4 contract files instead of relying o
 - `references/schema/node-route-table.yaml` defines route boundaries and the fixed `script_draft.preflight` order.
 - `references/schema/reports.yaml` defines SIR/RMR/FGR/preflight/postflight report fields. Reports use `report_status`; only the registry owns `gate_status`.
 - `references/checker/deterministic-checker.md` defines deterministic checker scope and the LLM review boundary.
+- `references/three-layer-control.md` defines which constraints can block generation and which belong to creative review.
+- `references/market/` defines target-market adaptation contracts. Start with `references/market/layer-taxonomy.md`, then use the market files for `/仿写 出海`; do not import `short-drama/references/overseas/*` into remake nodes.
 - `references/fixtures/` contains regression fixture contracts and initial samples.
 
 Before drafting a script in a managed project, run or mentally apply `script_draft.preflight`. This gate is the only script-generation entry; do not skip from project plan or episode outline directly to an episode body.
@@ -95,9 +101,11 @@ Before drafting a script in a managed project, run or mentally apply `script_dra
 1. Restore project state through `resume.restore` only when entering from a new/uncertain context. P10 consumes a valid `resume_packet`; it must not rerun full restore.
 2. Verify the target episode has an accepted current `execution_card` with `decision_id` and committed transaction.
 3. Consume the latest `fact_gate_report`, `source_integrity_report`, and `reference_mapping_report`. Do not rejudge P9/P12 inside script drafting.
-4. Verify `reference-expression-guide.md`, `factor-scorecard.yaml`, `remake-risk-audit.md`, `project-state.md`, and accepted canon are registered and readable.
-5. Reject forbidden reads: `short-drama/SKILL.md`, `short-drama/references/*.md`, raw source bundles, `research-notes.md`, `_legacy_review/**`, `09_experiments/**`, candidates, drafts, and tmp files.
-6. If blocked, return one user-visible blocking summary and set `body_generated=false`. Do not create an episode script.
+4. If the project target market is overseas or differs from the source market, consume the latest `market_adaptation_report`. Do not draft overseas remake scripts without the target-market adaptation layer.
+5. Verify `reference-expression-guide.md`, `factor-scorecard.yaml`, `remake-risk-audit.md`, `project-state.md`, and accepted canon are registered and readable.
+6. Reject forbidden reads: `short-drama/SKILL.md`, `short-drama/references/*.md`, raw source bundles, `research-notes.md`, `_legacy_review/**`, `09_experiments/**`, candidates, drafts, and tmp files.
+7. Apply the three-layer boundary: preflight blocks only Foundation/Skeleton failures. Flesh concerns such as weak dialogue texture, bland sensory detail, or generic sentence rhythm may be warnings for postflight, but must not by themselves block body generation.
+8. If blocked, return one user-visible blocking summary and set `body_generated=false`. Do not create an episode script.
 
 The blocking summary must include: blocking reason, affected scope, whether it blocks only the target episode or the whole project, recommended next step, and available user actions. Render it for the user as:
 
@@ -111,6 +119,8 @@ The blocking summary must include: blocking reason, affected scope, whether it b
 Do not expose the full internal registry, gate, trace, or transaction fields unless the user explicitly asks for debug detail.
 
 After drafting, run `script_draft.postflight` before unlocking the next episode. A script is not complete until quality passes, user review accepts it, canon is committed, state is updated, risk/sync checks pass, read trace is clean, and the next episode gate is unlocked. `quality_gate_status=passed` alone is not enough; continuation must use top-level `postflight_report.report_status == passed`.
+
+Postflight must include a Flesh-layer memorability check: name the one concrete moment, line, action, or image a viewer can remember. If the answer is only "the process passed" or "the hook exists", mark the episode as process-clean but creatively weak and request revision before treating it as quality-passed.
 
 Command-layer aliases do not weaken this rule. `/仿写 写集 N`, `/仿写 继续写第 N 集`, and any natural-language continuation request must still pass through the same preflight/postflight protocol.
 
@@ -169,11 +179,12 @@ For each selected concept, perform a second-layer replacement pass before outlin
    - For managed projects, create both `01_skeleton/reference-skeleton.md` and `01_skeleton/reference-expression-guide.md`; use `01_skeleton/factor-scorecard.yaml` for evidence-based transferable factors.
 
 3. **Make a reusable skeleton table**
-   - Per episode: function, protagonist pressure, antagonist action, viewer emotion,爽点/憋屈点, hook, what to preserve, what to replace.
+   - Per episode: use the `three-layer-control.md#Skeleton Table Contract` fields: `locked_episode_function`, `locked_viewer_emotion`, `locked_hook_function`, `locked_payoff_or_setup`, `must_replace_surface`, `free_implementation_zone`, and `distance_test`.
 
 4. **换皮不换骨**
    - Generate multiple concept skins that keep the skeleton but change genre, world, identities, power tokens, scenes, and dialogue logic.
    - Favor simple high-conflict premises suitable for Red Fruit/Douyin users.
+   - If `target_market=overseas`, do not generate domestic-facing concepts first. Generate overseas-adapted concept skins directly: overseas-native genre promise, relationship grammar, power/status system, public proof mechanism, and paywall pressure must fit the target market.
    - Diversify the concepts by audience, production cost, genre distance, and conflict engine.
    - Include a short risk note when a concept is too close to the reference or too expensive/confusing to shoot.
 
@@ -181,13 +192,14 @@ For each selected concept, perform a second-layer replacement pass before outlin
    - Produce project plan, logline, audience, world rules, character bios, relationship map, protagonist oppression source, comeback resource, key props, and first 10 episodes.
    - Explain the replacement logic for the core resource, power system, public proof scene, antagonist profit model, and long-term emotional hook.
    - Include a雷同风险自检 that lists which surface elements must still be changed before scripting.
+   - Include a `复刻权限表`: Foundation locked items, Skeleton locked functions, and Flesh free zones. This table prevents later drafts from treating optional texture choices as hard constraints.
 
 6. **Write detailed episode outlines**
    - For each episode, use 起、承、转、合.
    - Include exact episode function and ending hook.
    - Make each episode script-ready: visible opening conflict, pressure action, reversal action, concrete prop/evidence, and a shootable ending image.
    - Avoid outlines that only restate the project plan. Each episode needs new incident detail.
-   - For managed projects, convert the target episode outline into `04_outlines/episodes/epXXX.execution-card.md` before script drafting. The execution card is the direct control surface for script generation.
+   - For managed projects, convert the target episode outline into `04_outlines/episodes/epXXX.execution-card.md` before script drafting. The execution card is the direct control surface for script generation and must separate `locked_story_job`, `locked_entry_pressure`, `locked_turning_point`, `locked_exit_hook`, `free_scene_options`, `free_dialogue_options`, and `surface_replacement_notes`.
 
 7. **Draft shooting-ready script**
    - In managed projects, script drafting starts only after `script_draft.preflight` passes. Missing execution card, stale source/reference reports, open blocking risks, unverified direct facts, or forbidden reads block the draft.
@@ -206,6 +218,8 @@ For each selected concept, perform a second-layer replacement pass before outlin
    - Judge dialogue by character fit, scene pressure, plot function, and short-drama rhythm.
    - Check stage leakage: if a script draft starts doing concept planning or if a concept list starts writing full scenes, return it to the requested stage.
    - Check remake distance: preserve the emotional/functional skeleton while increasing the distance of specific incidents from the reference.
+   - Apply the three-layer boundary: fix Foundation/Skeleton violations decisively, but treat Flesh-layer choices as craft suggestions unless they copy protected expression, break character core, violate compliance, or erase the locked story job.
+   - Always answer: "What is the one concrete moment a viewer remembers from this episode?" If no concrete moment can be named, ask for revision instead of declaring creative quality passed.
    - In managed projects, use postflight status as the only next-episode unlock signal. Do not unlock continuation from a partial quality pass or from a draft that has not been accepted into canon and state.
    - If a candidate script exists but postflight is missing, incomplete, not user-accepted, or not committed to canon/state, block continuation and return a user-visible postflight blocking summary instead of writing the next episode.
 
@@ -224,9 +238,11 @@ Rules:
 - After **reference skeleton / 骨架表**:
   - For partial/sample skeletons: `基于已提供集数的样本骨架，生成 10 个样本创意方向。每个方向只判断开局冲突、人物关系、权力凭证、前 N 集可复刻节奏和雷同风险；中后段反转、终局爽点和完整商业模型均标为 [待确认]。`
   - For complete skeletons: `基于上面的完整可复刻骨架，生成 10 个彻底换皮的短剧创意方向。每个方向包含剧名、题材、一句话卖点、主角身份、男主身份、核心反派、关键权力凭证、前 10 集节奏和最大爽点。`
+  - For overseas target market: `基于上面的可复刻骨架，生成 10 个海外适配换皮方向。每个方向必须从一开始就按海外目标市场设计，包含剧名、目标平台/受众、海外-native 题材承诺、主角/男主身份、核心反派、权力/身份凭证、前 10 集节奏、最大爽点、必须替换的源市场机制和雷同风险。`
   - For complete skeletons: `把上面的可复刻骨架压缩成 20 集版本，保留原来的剧情功能、情绪节奏、爽点位置和结尾钩子。`
   - `指出上面参考剧本最值得复刻的 5 个爽点机制，并说明每个机制适合换成哪些现代/古装/奇幻表皮。`
 - After **10 concepts**:
+  - For overseas concept lists: `对第【编号】个海外适配方向生成 market-adaptation-report.md，逐项说明哪些剧情功能可迁移、哪些源市场机制必须替换、目标市场约束、雷同风险和写集前阻断项。`
   - `深化第【编号】个创意，输出完整项目策划案：剧名、类型、一句话卖点、目标受众、核心爽点、故事梗概、世界观、人设、人物关系网、前 10 集大纲和每集钩子。`
   - `对比第【编号】和第【编号】个创意，从开局冲突、用户理解成本、爽点密度、拍摄成本、长线付费钩子判断哪个更适合红果/抖音。`
 - After **project plan**:
