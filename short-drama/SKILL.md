@@ -981,7 +981,7 @@ clashes/roundtables 按以下规则决定显示内容：
 **流程：**
 
 1. 输出引导文字：
-   「还没有 Key？免费注册获取：**wangwendashuju.com** → 登录后点「个人中心」→「API Key」→ 复制（Key 以 `wwmcp_` 开头，首次赠 1000 Credits，5 月 31 日前有效）」
+   「还没有 Key？免费注册获取：**wangwendashuju.com** → 登录后进入 **wangwendashuju.com/mcp** → 创建 Key → 复制（Key 以 `wwmcp_` 开头，首次赠 1000 Credits，5 月 31 日前有效）」
 2. 等用户粘贴 Key
 3. 校验格式：Key 必须以 `wwmcp_` 开头；不符合则提示「格式不对，Key 应以 wwmcp_ 开头，请重新复制」并重试
 4. 用 Edit 工具将 `{skill目录}/.mcp.json` 中 `X-MCP-API-Key` 的值从 `YOUR_KEY_HERE` 替换为用户提供的 Key
