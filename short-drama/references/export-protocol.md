@@ -46,7 +46,7 @@
 | 2 · 长度探测 | 按 `completedEpisodes` 数判定 | ≤60 → 全文模式；>60 → 分批蒸馏（beats + 白名单骨架字段同时进 LLM） |
 | 3 · LLM 综合 | 按白名单加载 → 生成最终梗概（3-5 段叙事） | 输出 3-5 段 / 禁用词表扫描通过 |
 | 4 · 自动采用 | 展示综合梗概预览，自动写入 Word + 缓存，**不回写 `creative-plan.md`** | — |
-| 5 · docx 写入 | 按 `references/output-templates.md#导出` 三段式渲染 | docx 合法 Word 2007+ |
+| 5 · docx 写入 | 按 `references/output-templates-aux.md#导出` 三段式渲染 | docx 合法 Word 2007+ |
 | 6 · 缓存写入 | 综合梗概落 `.drama-state/synopsis-cache.md`；state 更新 4 个 `lastSynopsis*` 字段 | Read-Modify-Write 不覆盖其他字段 |
 
 ### 老项目 fallback / migration

@@ -14,7 +14,7 @@ read_when: every command before output generation
 2. **确定内容规则**：`mode: "overseas"` 只决定故事内容、平台规则、文化/合规/题材适配；不自动决定输出语言或剧本格式。
 3. **确定输出语言**：`language: "zh-CN"` 或未设置 → 中文呈现；`language: "en"` / `"en-US"` / `"en-GB"` → 英文呈现。
 4. **确定剧本格式**：`scriptFormat: "cn-shortdrama"` 或未设置 → 中文短剧格式；`scriptFormat: "hollywood"` → Hollywood master-scene 格式。`mode=overseas` 默认仍是 `zh-CN + cn-shortdrama`，除非用户明确要求“英文交付 / 英文剧本格式 / Hollywood format / 投海外平台英文稿”。
-5. **锚定声明**：重读本命令的输出模板区块（见 `references/output-templates.md`），严格按模板输出，不混用呈现版本。
+5. **锚定声明**：重读本命令的输出模板区块（见 `references/output-templates-core.md` 或 `references/output-templates-aux.md`），严格按模板输出，不混用呈现版本。
 
 ## 格式封闭原则（强制扣分/阻断）
 

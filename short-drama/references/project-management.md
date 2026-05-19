@@ -325,7 +325,7 @@ json.dump({"currentStep": "创作方案", "genre": ["古装"]}, open(path, "w"))
 在活跃项目上下文中：
 
 1. 读活跃项目 `.drama-state.json`
-2. 按 `output-templates.md#README` 模板生成 `~/short-drama-projects/<projectName>/README.md`（绝对路径，不依赖 cwd）
+2. 按 `output-templates-aux.md#README` 模板生成 `~/short-drama-projects/<projectName>/README.md`（绝对路径，不依赖 cwd）
 3. 输出"README.md 已更新"
 
 ## 跨平台路径处理（强制）

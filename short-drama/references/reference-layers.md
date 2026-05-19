@@ -94,7 +94,7 @@ Chinese control names:
 | Reference | Primary role |
 |---|---|
 | `brainstorm.md` | Isomorphic story ideation skeleton |
-| `output-templates.md` | User-facing command output templates and `/帮助` source |
+| `output-templates-core.md` / `output-templates-aux.md` | User-facing command output templates and `/帮助` source |
 | `setting-bible-template.md` | Setting bible artifact template |
 
 ## Non-Markdown Utility In References
@@ -178,7 +178,7 @@ Template contracts are strict about output shape and loose about creative method
 
 | Control | References | Use for |
 |---|---|---|
-| User-facing command templates | `output-templates.md` | Keep `/帮助`, command output, and generated project documents consistent |
+| User-facing command templates | `output-templates-core.md` / `output-templates-aux.md` | Keep `/帮助`, command output, and generated project documents consistent |
 | Project artifact templates | `brainstorm.md`, `setting-bible-template.md` | Preserve expected sections while allowing content variation |
 | Extraction contracts | `script-element-extraction.md`, `storyboard-guide.md`, `storyboard-rules.md` | Keep downstream script parsing and storyboard handoff stable |
 
