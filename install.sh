@@ -8,11 +8,183 @@ CACHE="$HOME/.claude/.skill-repos/drama-workshop-skills"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 OPENCLAW_SKILLS_DIR="$HOME/.openclaw/skills"
 
+# 解析参数
+MCP_ONLY=0
+for arg in "$@"; do
+  [[ "$arg" == "--mcp-only" ]] && MCP_ONLY=1
+done
+
 echo "=== gobuildit Skills 安装器 ==="
 echo ""
 
 timestamp() {
   date +"%Y%m%d-%H%M%S"
+}
+
+# 输出辅助函数
+say()  { printf '\033[32m[OK]\033[0m    %s\n' "$*"; }
+warn() { printf '\033[33m[注意]\033[0m  %s\n' "$*"; }
+err()  { printf '\033[31m[错误]\033[0m  %s\n' "$*" >&2; }
+hint() { printf '         → %s\n' "$*"; }
+
+# 读已有 key（先查 Claude Code，再查 WorkBuddy）
+_read_existing_key() {
+  local key=""
+  if [[ -f "$HOME/.claude/settings.json" ]]; then
+    key=$(node -e "try{const c=require('$HOME/.claude/settings.json');
+      console.log(c.mcpServers?.['wangwen-bigdata']?.headers?.['X-MCP-API-Key']||'')}catch(e){}" 2>/dev/null || true)
+  fi
+  if [[ -z "$key" || "$key" == "YOUR_KEY_HERE" ]] && [[ -f "$HOME/.workbuddy/mcp.json" ]]; then
+    key=$(node -e "try{const c=require('$HOME/.workbuddy/mcp.json');
+      console.log(c.mcpServers?.['wangwen-bigdata']?.headers?.['X-MCP-API-Key']||'')}catch(e){}" 2>/dev/null || true)
+  fi
+  echo "$key"
+}
+
+# terminal 内 prompt 收 key，返回 1 表示用户跳过
+_prompt_key() {
+  local existing
+  existing=$(_read_existing_key)
+
+  if [[ -n "$existing" && "$existing" != "YOUR_KEY_HERE" ]]; then
+    echo ""
+    echo "  检测到已有 Key：${existing:0:8}***"
+    echo "  [1] 保留现有 Key（直接回车）"
+    echo "  [2] 换新 Key"
+    local choice
+    read -r -p "  请选择 [1/2，默认 1]：" choice </dev/tty 2>/dev/null || { warn "无交互终端，跳过 MCP 配置"; return 1; }
+    if [[ "$choice" == "2" ]]; then
+      read -r -p "  请粘贴新 Key（wwmcp_ 开头）：" WANGWEN_KEY </dev/tty 2>/dev/null || return 1
+    else
+      WANGWEN_KEY="$existing"
+      say "保留现有 Key"
+    fi
+  else
+    echo ""
+    echo "  还没有 Key？免费注册获取（首次 1000 Credits，约够查 200 次榜单）："
+    echo "  https://wangwendashuju.com/mcp  →  注册后在「个人中心 → API Key」页面复制"
+    echo ""
+    local key_input
+    read -r -p "  请粘贴你的 Key（wwmcp_ 开头，没有可直接回车跳过）：" key_input </dev/tty 2>/dev/null || { warn "无交互终端，跳过 MCP 配置"; return 1; }
+    WANGWEN_KEY="$key_input"
+  fi
+
+  if [[ -z "$WANGWEN_KEY" ]]; then
+    warn "未填入 Key，跳过 MCP 配置"
+    hint "稍后可单独配置：bash install.sh --mcp-only"
+    return 1
+  fi
+  export WANGWEN_KEY
+}
+
+# 写入 JSON（jq → node → python3 降级链，写前备份，原子替换）
+_write_mcp_config() {
+  local config="$1" type="$2" key="$3"
+  local backup="${config}.bak.$(timestamp)"
+  local tmp="${config}.tmp.$$"
+
+  [[ -f "$config" ]] && cp "$config" "$backup"
+
+  if command -v jq >/dev/null 2>&1; then
+    jq --arg k "$key" --arg t "$type" --arg u "https://wwdsj-mcp.lingjingai.cn/mcp" \
+      '.mcpServers["wangwen-bigdata"] = {"type":$t,"url":$u,"headers":{"X-MCP-API-Key":$k}}' \
+      "${config:-/dev/null}" 2>/dev/null > "$tmp" || true
+  elif command -v node >/dev/null 2>&1; then
+    # key 通过环境变量传入，避免特殊字符注入
+    WANGWEN_KEY_SAFE="$key" node -e "
+const fs=require('fs'), p=process.argv[1];
+const k=process.env.WANGWEN_KEY_SAFE;
+const t='$type', u='https://wwdsj-mcp.lingjingai.cn/mcp';
+const tmp='$tmp';
+const c=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+(c.mcpServers=c.mcpServers||{})['wangwen-bigdata']={type:t,url:u,headers:{'X-MCP-API-Key':k}};
+fs.writeFileSync(tmp,JSON.stringify(c,null,2));" "$config" 2>/dev/null || true
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import json,os,sys
+p,t=sys.argv[1],'$type'
+k=os.environ['WANGWEN_KEY_SAFE']
+c=json.load(open(p)) if os.path.exists(p) else {}
+c.setdefault('mcpServers',{})['wangwen-bigdata']={'type':t,'url':'https://wwdsj-mcp.lingjingai.cn/mcp','headers':{'X-MCP-API-Key':k}}
+json.dump(c,open('$tmp','w'),indent=2,ensure_ascii=False)" "$config" 2>/dev/null || true
+  else
+    err "未找到 jq / node / python3，无法自动写入"
+    hint "请手动在 $config 的 mcpServers 段填入 Key"
+    [[ -f "$backup" ]] && rm -f "$backup"
+    return 1
+  fi
+
+  # 校验 JSON 合法
+  local valid=0
+  if command -v jq >/dev/null 2>&1 && jq empty "$tmp" >/dev/null 2>&1; then
+    valid=1
+  elif command -v node >/dev/null 2>&1 && node -e "JSON.parse(require('fs').readFileSync('$tmp','utf8'))" >/dev/null 2>&1; then
+    valid=1
+  fi
+
+  if [[ $valid -eq 0 ]]; then
+    err "生成的 JSON 不合法，原文件未动"
+    hint "备份：$backup"
+    rm -f "$tmp"
+    return 1
+  fi
+
+  mv "$tmp" "$config"
+}
+
+# MCP 配置主流程（subshell 隔离，失败不影响 skill 主体安装）
+_setup_mcp() {
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "【推荐】接入网文大数据 MCP"
+  echo "提供番茄/红果/抖音漫剧实时榜单"
+  echo "让 /选题 /市场 /创作方案 调用真实数据替代主观经验"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+
+  local setup_mcp
+  read -r -p "是否现在配置？(Y/n，默认 Y)：" setup_mcp </dev/tty 2>/dev/null || { warn "无交互终端，跳过 MCP 配置"; return 0; }
+  setup_mcp="${setup_mcp:-Y}"
+
+  if [[ ! "$setup_mcp" =~ ^[Yy]$ ]]; then
+    warn "已跳过 MCP 配置"
+    hint "稍后可单独配置：bash install.sh --mcp-only"
+    return 0
+  fi
+
+  (
+    _prompt_key || exit 0
+
+    local configured=0
+    local claude_settings="$HOME/.claude/settings.json"
+    local wb_config="$HOME/.workbuddy/mcp.json"
+
+    if [[ -d "$HOME/.claude" ]]; then
+      # 确保文件存在（至少是空 JSON 对象）
+      [[ -f "$claude_settings" ]] || echo '{}' > "$claude_settings"
+      if WANGWEN_KEY_SAFE="$WANGWEN_KEY" _write_mcp_config "$claude_settings" "http" "$WANGWEN_KEY"; then
+        say "Claude Code MCP 配置完成"
+        configured=1
+      fi
+    fi
+
+    if [[ -d "$HOME/.workbuddy" ]]; then
+      [[ -f "$wb_config" ]] || echo '{}' > "$wb_config"
+      if WANGWEN_KEY_SAFE="$WANGWEN_KEY" _write_mcp_config "$wb_config" "streamableHttp" "$WANGWEN_KEY"; then
+        say "WorkBuddy MCP 配置完成"
+        configured=1
+      fi
+    fi
+
+    if [[ $configured -eq 0 ]]; then
+      warn "未检测到 Claude Code 或 WorkBuddy"
+      hint "手动配置：https://wangwendashuju.com/mcp"
+    else
+      echo ""
+      say "配置完成！重启 Claude Code / WorkBuddy 后即可使用"
+      hint "试试输入：用网文数据帮我查一下近期红果最热门的题材"
+    fi
+  ) || warn "MCP 配置跳过，skill 主体安装不受影响"
 }
 
 migrate_embedded_trash() {
@@ -41,6 +213,12 @@ migrate_embedded_trash() {
     echo "  警告：无法迁移 $trash_dir，请手动移出 skills 目录，避免旧 skill 被扫描。" >&2
   fi
 }
+
+# --mcp-only 模式：跳过 skill 安装，直接配置 MCP
+if [[ $MCP_ONLY -eq 1 ]]; then
+  _setup_mcp
+  exit 0
+fi
 
 if ! command -v git >/dev/null 2>&1; then
   echo "错误：未找到 git。请先安装 Git 后重新运行本安装命令。" >&2
@@ -192,3 +370,6 @@ if [ "$installed" -gt 0 ]; then
 else
   echo "警告：未找到任何 Skill，请检查仓库内容。"
 fi
+
+# MCP 配置（skill 安装成功后推荐接入）
+_setup_mcp

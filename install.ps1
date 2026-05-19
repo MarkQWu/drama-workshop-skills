@@ -1,4 +1,7 @@
 # gobuildit 社区 Skills 一键安装 (Windows)
+param(
+    [switch]$McpOnly
+)
 $ErrorActionPreference = "Stop"
 
 $repoGitHub = "https://github.com/MarkQWu/drama-workshop-skills.git"
@@ -7,6 +10,136 @@ $cache = Join-Path $env:USERPROFILE ".claude\.skill-repos\drama-workshop-skills"
 
 Write-Host "=== gobuildit Skills 安装器 ===" -ForegroundColor Cyan
 Write-Host ""
+
+# ── MCP 配置辅助函数 ─────────────────────────────────────────────────────────
+
+function Get-WangwenKey {
+    $claudeConfig = Join-Path $env:USERPROFILE ".claude\settings.json"
+    $wbConfig     = Join-Path $env:USERPROFILE ".workbuddy\mcp.json"
+
+    # 读已有 key（先查 Claude Code，再查 WorkBuddy）
+    $existingKey = ""
+    foreach ($f in @($claudeConfig, $wbConfig)) {
+        if (Test-Path $f) {
+            try {
+                $c = Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json
+                $k = $c.mcpServers.'wangwen-bigdata'.headers.'X-MCP-API-Key'
+                if ($k -and $k -ne "YOUR_KEY_HERE") { $existingKey = $k; break }
+            } catch {}
+        }
+    }
+
+    if ($existingKey) {
+        Write-Host ""
+        Write-Host "  检测到已有 Key：$($existingKey.Substring(0,[Math]::Min(8,$existingKey.Length)))***"
+        Write-Host "  [1] 保留现有 Key（直接回车）"
+        Write-Host "  [2] 换新 Key"
+        $choice = Read-Host "  请选择 [1/2，默认 1]"
+        if ($choice -eq "2") {
+            return Read-Host "  请粘贴新 Key（wwmcp_ 开头）"
+        }
+        return $existingKey
+    }
+
+    Write-Host ""
+    Write-Host "  还没有 Key？免费注册（首次 1000 Credits，约够查 200 次榜单）："
+    Write-Host "  https://wangwendashuju.com/mcp  →  注册后在「个人中心 → API Key」页面复制"
+    Write-Host ""
+    return Read-Host "  请粘贴你的 Key（wwmcp_ 开头，没有可直接回车跳过）"
+}
+
+function Write-McpConfig($configPath, $type, $key) {
+    $backup = "$configPath.bak.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    if (Test-Path $configPath) { Copy-Item $configPath $backup }
+
+    $c = if (Test-Path $configPath) {
+        try { Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { [PSCustomObject]@{} }
+    } else { [PSCustomObject]@{} }
+
+    if (-not $c.PSObject.Properties['mcpServers']) {
+        $c | Add-Member -NotePropertyName mcpServers -NotePropertyValue ([PSCustomObject]@{})
+    }
+
+    # idempotent：已有完全相同的 key 则跳过写入
+    $existingEntry = $c.mcpServers.PSObject.Properties['wangwen-bigdata']
+    $existingEntryKey = if ($existingEntry) { $existingEntry.Value.headers.'X-MCP-API-Key' } else { $null }
+    if ($existingEntryKey -and $existingEntryKey -ne "YOUR_KEY_HERE" -and $existingEntryKey -eq $key) {
+        return
+    }
+
+    $c.mcpServers | Add-Member -NotePropertyName 'wangwen-bigdata' -NotePropertyValue ([PSCustomObject]@{
+        type    = $type
+        url     = "https://wwdsj-mcp.lingjingai.cn/mcp"
+        headers = [PSCustomObject]@{ 'X-MCP-API-Key' = $key }
+    }) -Force
+
+    $tmp = "$configPath.tmp"
+    # -Encoding UTF8 必须：PS5.1 默认输出 UTF-16 LE，会导致 Claude Code 解析失败
+    $c | ConvertTo-Json -Depth 10 | Set-Content -Path $tmp -Encoding UTF8
+    Move-Item $tmp $configPath -Force
+}
+
+function Invoke-McpSetup {
+    Write-Host ""
+    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    Write-Host "【推荐】接入网文大数据 MCP"
+    Write-Host "提供番茄/红果/抖音漫剧实时榜单"
+    Write-Host "让 /选题 /市场 /创作方案 调用真实数据"
+    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    Write-Host ""
+
+    $setup = Read-Host "是否现在配置？(Y/n，默认 Y)"
+    if (-not $setup) { $setup = "Y" }
+
+    if ($setup -notmatch "^[Yy]$") {
+        Write-Host "[注意]  已跳过，稍后可单独配置：.\install.ps1 -McpOnly" -ForegroundColor Yellow
+        return
+    }
+
+    $key = Get-WangwenKey
+    if (-not $key) {
+        Write-Host "[注意]  未填入 Key，跳过 MCP 配置" -ForegroundColor Yellow
+        Write-Host "         → 稍后可单独配置：.\install.ps1 -McpOnly"
+        return
+    }
+
+    $claudeConfig = Join-Path $env:USERPROFILE ".claude\settings.json"
+    $wbConfig     = Join-Path $env:USERPROFILE ".workbuddy\mcp.json"
+    $configured   = $false
+
+    if (Test-Path (Join-Path $env:USERPROFILE ".claude")) {
+        if (-not (Test-Path $claudeConfig)) { '{}' | Set-Content -Path $claudeConfig -Encoding UTF8 }
+        try {
+            Write-McpConfig $claudeConfig "http" $key
+            Write-Host "[OK]    Claude Code MCP 配置完成" -ForegroundColor Green
+            $configured = $true
+        } catch { Write-Host "[错误]  Claude Code 配置失败：$_" -ForegroundColor Red }
+    }
+
+    if (Test-Path (Join-Path $env:USERPROFILE ".workbuddy")) {
+        if (-not (Test-Path $wbConfig)) { '{}' | Set-Content -Path $wbConfig -Encoding UTF8 }
+        try {
+            Write-McpConfig $wbConfig "streamableHttp" $key
+            Write-Host "[OK]    WorkBuddy MCP 配置完成" -ForegroundColor Green
+            $configured = $true
+        } catch { Write-Host "[错误]  WorkBuddy 配置失败：$_" -ForegroundColor Red }
+    }
+
+    if (-not $configured) {
+        Write-Host "[注意]  未检测到 Claude Code 或 WorkBuddy" -ForegroundColor Yellow
+        Write-Host "         → 手动配置：https://wangwendashuju.com/mcp"
+    } else {
+        Write-Host ""
+        Write-Host "[OK]    配置完成！重启 Claude Code / WorkBuddy 后即可使用" -ForegroundColor Green
+        Write-Host "         → 试试输入：用网文数据帮我查一下近期红果最热门的题材"
+    }
+}
+
+# ── McpOnly 模式 ──────────────────────────────────────────────────────────────
+if ($McpOnly) {
+    Invoke-McpSetup
+    exit 0
+}
 
 function Get-Timestamp {
     return (Get-Date -Format "yyyyMMdd-HHmmss")
@@ -174,3 +307,6 @@ if ($installed -gt 0) {
 } else {
     Write-Host "警告：未找到任何 Skill，请检查仓库内容。" -ForegroundColor Yellow
 }
+
+# MCP 配置（skill 安装成功后推荐接入）
+Invoke-McpSetup
