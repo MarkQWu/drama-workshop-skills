@@ -748,7 +748,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **输出格式：** 见 `references/output-templates-aux.md#导出`
 
-**Word 导出流程：** 调用 `python3 {skill目录}/scripts/export_docx.py "export/{剧名}-完整剧本.md" "export/{剧名}-完整剧本.docx"`，脚本自动检测/安装 pandoc（brew/winget/choco/apt），失败时输出手动安装指引。
+**Word 导出流程：** 调用 `python3 {skill目录}/scripts/export_docx.py "export/{剧名}-完整剧本.md" "export/{剧名}-完整剧本.docx"`，脚本依赖 `python-docx` + `lxml`（纯 Python，无需 pandoc）；未安装时输出 `pip3 install python-docx lxml` 指引。
 
 **输出：** `export/{剧名}-完整剧本.docx`
 
