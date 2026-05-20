@@ -146,7 +146,7 @@ grep -E "核心事件：|新增伏笔：|回收伏笔：|需要后续强化：" 
 ```
 
 **通过标准**：边界存在；`CONTINUITY` 行号大于边界行号；3 字段均存在；5 字段旧版本字段 0 命中。
-**不通过**：诊断 `references/output-templates.md#分集`。
+**不通过**：诊断 `references/output-templates-core.md#分集`。
 
 ---
 
@@ -193,7 +193,7 @@ grep -R "CONTINUITY\\|角色状态变化：\\|伏笔与回收：\\|尾钩义务�
 ```
 
 **通过标准**：export 与 storyboards 交付物 0 命中。
-**不通过**：诊断 `/导出`、`/分镜`、单集导出临时文件逻辑或 `output-templates.md`。
+**不通过**：诊断 `/导出`、`/分镜`、单集导出临时文件逻辑或 `output-templates-aux.md`。
 
 ---
 
