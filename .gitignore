@@ -22,3 +22,4 @@ __pycache__/
 
 # MCP 配置含本地 API Key，不进公开仓库（committed 版本是 placeholder，本地覆盖含真实 key）
 short-drama/.mcp.json
+short-drama-remake/.mcp.json
