@@ -42,7 +42,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 2. Read `{skill目录}/.last-version-shown`（文件不存在视为空字符串）
 3. 若 current_version ≠ last_shown：
    - 若 `{skill目录}/WHATSNEW.md` 存在且首个版本号与 current_version 一致 → 在命令输出最前面展示全部内容（`---` 包围，加「📣 更新提醒」标题）
-   - 若 `{skill目录}/WHATSNEW.md` 不存在，或首个版本号与 current_version 不一致 → 在命令输出最前面展示内置更新提醒：”v1.34.1 更新：/帮助 命令重构，按 skill 分 6 区块，MCP 融合点明说；/配置数据 Key 获取路径修正。”
+   - 若 `{skill目录}/WHATSNEW.md` 不存在，或首个版本号与 current_version 不一致 → 在命令输出最前面展示内置更新提醒：”v1.35.0 更新：接入网文大数据 MCP，新增 /短剧市场 命令查看 6 板块市场报告；/选题会 /策划 可选调用实时榜单；/配置数据 在对话里完成 Key 配置。另：剧本正文破折号完全禁用，`——`、`—`、`--` 任意出现均标【严重】。”
    - `echo {current_version} > {skill目录}/.last-version-shown` 记录已展示
 4. 版本相同 → 跳过，直接进入格式控制步骤
 
@@ -984,22 +984,22 @@ clashes/roundtables 按以下规则决定显示内容：
    「还没有 Key？免费注册获取：**wangwendashuju.com** → 登录后进入 **wangwendashuju.com/mcp** → 创建 Key → 复制（Key 以 `wwmcp_` 开头，首次赠 1000 Credits，5 月 31 日前有效）」
 2. 等用户粘贴 Key
 3. 校验格式：Key 必须以 `wwmcp_` 开头；不符合则提示「格式不对，Key 应以 wwmcp_ 开头，请重新复制」并重试
-4. 用 Edit 工具将 `{skill目录}/.mcp.json` 中 `X-MCP-API-Key` 的值从 `YOUR_KEY_HERE` 替换为用户提供的 Key
-5. 输出：「✅ 配置完成！请重启 WorkBuddy / Claude Code，重启后直接使用 /市场、/选题会、/策划 即可调用真实榜单数据。」
+4. 写入 Key——以下文件**都要更新**（用 Edit 工具逐一替换 `X-MCP-API-Key` 字段值）：
+   - `{skill目录}/.mcp.json`（必须，所有平台）
+   - `~/.workbuddy/mcp.json`（若文件存在则更新，WorkBuddy connector 注册表）
+5. 输出：「✅ 配置完成！请重启 WorkBuddy / Claude Code，重启后直接使用 /短剧市场、/选题会、/策划 即可调用真实榜单数据。」
 
-**Key 已配置时：** 提示当前 Key 前 8 位，询问是否更换。
+**Key 已配置时：** 读取 `{skill目录}/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。
 
 ---
 
-### /市场 [平台] [题材/时间范围]
+### /短剧市场 [平台]
 
 **功能：** 专项市场调研——调用网文大数据 MCP 实时查询榜单数据，输出 6 板块固定结构的市场洞察报告。适合在选题前做行业摸底，或周期性刷新市场认知。
 
 **依赖：** 需要 `wangwen-bigdata` MCP 工具已配置。未配置或 Key 无效时，输出提示：「需要配置网文大数据 Key，在对话里输入 `/配置数据` 即可完成设置。」
 
-**调用示例：** `/市场 红果 近14天` | `/市场 番茄 男频` | `/市场 抖音漫剧 近一个月`
-
-**调用前提示：** 「💡 即将调用网文大数据 MCP 市场查询（消耗约 3-5 Credits），是否继续？(Y/n)」用户确认后执行。
+**调用示例：** `/短剧市场 红果` | `/短剧市场 番茄` | `/短剧市场 抖音漫剧` | `/短剧市场`（不填默认红果短剧）
 
 **执行流程：**
 
@@ -1008,7 +1008,11 @@ clashes/roundtables 按以下规则决定显示内容：
    - 番茄小说 → `dw_jm.dwd_novel_base_df`
    - 抖音漫剧 → `etl.ads_anime_rank_official`
    - 未指定 → 默认红果短剧
-2. 先读对应 `resource://domain-video` 或 `resource://domain-novel` 获取表结构，再按时间范围构造查询
+2. 询问用户配置（一次性交互，用户可直接回车跳过用默认值）：
+   - 「时间范围？近7天 / 近14天 / 近30天（默认近14天）」
+   - 「聚焦题材？（可选，直接回车跳过查全榜）」
+3. 确认 Credits 消耗：「💡 即将调用网文大数据 MCP 市场查询（消耗约 3-5 Credits），是否继续？(Y/n)」用户确认后执行
+4. 先读对应 `resource://domain-video` 或 `resource://domain-novel` 获取表结构，再按选定配置构造查询
 
 **输出固定结构：** 见 `references/output-templates-aux.md#市场`（6 板块：榜单速览 / 题材分布 / 人设热力 / 金手指 / 改编信号 / 操盘建议）
 
