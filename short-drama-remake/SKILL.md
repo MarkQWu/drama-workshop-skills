@@ -99,8 +99,8 @@ These advisory meetings are not required workflow steps. They may produce analys
 **执行流程：**
 
 1. 确认 Credits 消耗：「💡 即将查询网文大数据 MCP 榜单（消耗约 2-4 Credits），是否继续？(Y/n)」用户确认后执行
-2. 查询榜单：从 `lg_hongguo_video_snapshot` 按关键词/题材筛选近 14 天热度 TOP 3-5 剧目，获取 `video_name`、`video_desc`、`video_tags`、`gender`、`episode_count`、`like_count_by_episode`
-3. 调取 AI 分析：`lg_video_analysis` 获取对应剧目的 `emotion_conflict_analysis`、`core_tags_analysis`
+2. 先读 `resource://domain-video` 获取当前表结构（以服务端实际字段名为准），再查询热播榜单：从 `lg_hongguo_video_snapshot`（或服务端对应表）按关键词/题材筛选近 14 天热度 TOP 3-5 剧目，获取 `video_name`、`video_desc`、`video_tags`、`gender`、`episode_count`、`like_count_by_episode`
+3. 调取 AI 分析：`lg_video_analysis`（或服务端对应表）获取对应剧目的 `emotion_conflict_analysis`、`core_tags_analysis`
 4. **输出骨架报告**（每部剧一张）：
    - **剧名 + 分集数 + 受众（男/女频）**
    - **剧情摘要**（来自 `video_desc`，精简 1-2 句）
@@ -123,7 +123,7 @@ These advisory meetings are not required workflow steps. They may produce analys
 
 确认后执行：
 - 提取用户骨架中隐含的 2-4 个候选题材
-- 查询 `lg_hongguo_video_snapshot` 该题材近 14 天在榜数量和平均热度
+- 先读 `resource://domain-video` 确认表结构，再查询 `lg_hongguo_video_snapshot`（或服务端对应表）该题材近 14 天在榜数量和平均热度
 - 在换皮方向里为每个方向附加：`📊 赛道热度：[高/中/低]，近14天在榜 N 部`
 
 MCP 不可用或用户跳过时，正常生成换皮方向，末尾追加：
