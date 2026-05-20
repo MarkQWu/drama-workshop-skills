@@ -1,3 +1,15 @@
+**v0.5.0**（2026-05-20）
+
+MCP 数据增强：接入网文大数据，新增两个无剧本/数据驱动入口。
+
+- 新增 `/仿写 发现 [关键词/题材]`：从红果热播榜单 MCP 数据（`video_desc` 摘要 + AI 冲突分析 + 分集热度）提炼可复刻骨架，供没有源剧本的用户探索方向；骨架标注 `source_scope=mcp_summary`，中后段标 `[待确认]`，可衔接 `/仿写 换皮`。
+- `/仿写 换皮` 新增可选热度验证：生成换皮方向前可查询各候选题材近 14 天在榜数量和热度，每个方向附 `📊 赛道热度` 标注。
+- 新增 `/配置数据` 命令：通过对话完成网文大数据 MCP Key 配置，写入 `{skill目录}/.mcp.json` 和 `~/.workbuddy/mcp.json`（如存在）。
+- 新增 `short-drama-remake/.mcp.json` 配置模板（Key 占位 `YOUR_KEY_HERE`）。
+- MCP 均为可选增强，未配置时所有命令回退内置方法论，末尾附 `/配置数据` 提示。
+
+---
+
 **v0.4.4**（2026-05-15）
 
 Tighten Overseas Boundary：`remake_gate_checker.py` 默认禁止读取 `short-drama/references/` 前缀，避免新增原创出海资料绕过隔离；`market_adaptation_report` 契约补齐 R0-R5 字段校验；`references/market/` 从占位升级为 remake-native active scaffold，用本 skill 自己的目标市场迁移分类表达海外规则。

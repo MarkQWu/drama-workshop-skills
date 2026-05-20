@@ -6,7 +6,7 @@ description: Analyze reference short-drama scripts or screen-recorded prompt wor
 # Short Drama Remake
 
 > License: SKILL.md, agents metadata, scripts, and bundled code are MIT; references are gobuildit methodology documentation with all rights reserved except use as part of this skill distribution.
-> Version: 0.4.4
+> Version: 0.5.0
 
 ## Core Rule
 
@@ -53,6 +53,8 @@ Core subcommands:
 - `/仿写 骨架`: run the reference skeleton stage.
 - `/仿写 换皮`: run the skin-swap concept stage.
 - `/仿写 出海`: enter overseas-target remake mode. Without a selected concept, generate overseas-adapted skin-swap concepts; with a selected concept number/text, create or refresh the target-market adaptation report.
+- `/仿写 发现 [关键词/剧名/题材]`: 无剧本入口——调用网文大数据 MCP 查询热播榜单，从剧情摘要、AI 冲突分析和分集热度数据提炼可复刻骨架，可衔接 `/仿写 换皮`。需配置 `wangwen-bigdata` MCP Key（输入 `/配置数据` 完成设置）。
+- `/配置数据`: 通过对话完成网文大数据 MCP Key 配置，无需命令行或手动编辑文件。
 - `/仿写 定案`: deepen the selected concept into a project plan.
 - `/仿写 集纲`: create detailed episode outlines.
 - `/仿写 写集 N`: route to the existing managed script drafting path; `script_draft.preflight` remains mandatory.
@@ -65,6 +67,69 @@ Optional advisory entries:
 - `/仿写 诊断会 N`
 
 These advisory meetings are not required workflow steps. They may produce analysis or prescriptions, but they must not set `gate_status`, write current pointers, generate an episode script, commit canon, or unlock continuation.
+
+## MCP 数据增强（可选）
+
+### /配置数据
+
+**功能：** 通过对话完成网文大数据 MCP Key 配置，无需命令行或手动编辑文件。
+
+**使用场景：** 使用 `/仿写 发现` 或 `/仿写 换皮` 热度验证时需要配置。
+
+1. 询问：「请粘贴你的网文大数据 API Key（Key 以 `wwmcp_` 开头）」
+2. 若用户还没有 Key，提示：「还没有 Key？免费注册：**wangwendashuju.com** → 登录后进入 **wangwendashuju.com/mcp** → 创建 Key → 复制（Key 以 `wwmcp_` 开头）」
+3. 校验格式：Key 必须以 `wwmcp_` 开头；不符合则提示「格式不对，Key 应以 wwmcp_ 开头，请重新复制」并重试
+4. 写入 Key——以下文件**都要更新**（用 Edit 工具逐一替换 `X-MCP-API-Key` 字段值）：
+   - `{skill目录}/.mcp.json`（必须，所有平台）
+   - `~/.workbuddy/mcp.json`（若文件存在则更新，WorkBuddy connector 注册表）
+5. 输出：「✅ 配置完成！请重启 WorkBuddy / Claude Code，重启后 /仿写 发现 和 /仿写 换皮 热度验证即可调用真实榜单数据。」
+
+**Key 已配置时：** 读取 `{skill目录}/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。
+
+---
+
+### /仿写 发现 [关键词/剧名/题材]
+
+**功能：** 无剧本入口——从热播榜单数据中提炼可复刻骨架，适合没有源剧本的用户探索方向。
+
+**依赖：** 需要 `wangwen-bigdata` MCP 工具已配置。未配置时输出：「需要配置网文大数据 Key，在对话里输入 `/配置数据` 即可完成设置。」
+
+**调用示例：** `/仿写 发现 逆袭总裁` | `/仿写 发现 女频甜宠` | `/仿写 发现`（不填则展示近期综合热度 TOP 5）
+
+**执行流程：**
+
+1. 确认 Credits 消耗：「💡 即将查询网文大数据 MCP 榜单（消耗约 2-4 Credits），是否继续？(Y/n)」用户确认后执行
+2. 查询榜单：从 `lg_hongguo_video_snapshot` 按关键词/题材筛选近 14 天热度 TOP 3-5 剧目，获取 `video_name`、`video_desc`、`video_tags`、`gender`、`episode_count`、`like_count_by_episode`
+3. 调取 AI 分析：`lg_video_analysis` 获取对应剧目的 `emotion_conflict_analysis`、`core_tags_analysis`
+4. **输出骨架报告**（每部剧一张）：
+   - **剧名 + 分集数 + 受众（男/女频）**
+   - **剧情摘要**（来自 `video_desc`，精简 1-2 句）
+   - **核心冲突结构**（来自 `emotion_conflict_analysis`）
+   - **爽点分布**（基于 `like_count_by_episode`，指出哪几集是高潮峰值集）
+   - **核心标签**（来自 `core_tags_analysis`）
+   - **可复刻骨架要素**：权力关系、情感节奏、反转位置（标注 `[推断自摘要]`，非完整剧本拆解）
+   - **局限性说明**：「⚠️ 本骨架基于平台摘要和 AI 分析，非完整剧本拆解。细节可信度低于用户直接提供剧本，建议用于方向探索；正式立项前建议补充源剧本。」
+5. 输出后询问：「继续生成换皮方向？选一部剧继续 `/仿写 换皮`，或提供完整剧本获取精细骨架。」
+
+**与标准流程的衔接：** `/仿写 发现` 产出的骨架可替代标准流程中「用户提供剧本」作为 `/仿写 换皮` 的输入，但 `source_scope = mcp_summary`（不等同于 `complete`）。换皮概念生成时每个方向必须注明「骨架来源：MCP 摘要」，中后段反转和终局标为 `[待确认]`。
+
+---
+
+### /仿写 换皮 MCP 热度验证（可选增强）
+
+在 `/仿写 换皮` 生成换皮方向**之前**，若 `wangwen-bigdata` MCP 可用，询问：
+
+「💡 是否在生成换皮方向前验证各题材在当前榜单的热度？（约 1-2 Credits，可帮助筛选赛道，Y/n）」
+
+确认后执行：
+- 提取用户骨架中隐含的 2-4 个候选题材
+- 查询 `lg_hongguo_video_snapshot` 该题材近 14 天在榜数量和平均热度
+- 在换皮方向里为每个方向附加：`📊 赛道热度：[高/中/低]，近14天在榜 N 部`
+
+MCP 不可用或用户跳过时，正常生成换皮方向，末尾追加：
+`> 📊 提示：输入 /配置数据 可配置网文大数据 Key，换皮时可自动验证题材热度。`
+
+---
 
 ## Stage Contract
 
