@@ -42,7 +42,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 2. Read `{skill目录}/.last-version-shown`（文件不存在视为空字符串）
 3. 若 current_version ≠ last_shown：
    - 若 `{skill目录}/WHATSNEW.md` 存在且首个版本号与 current_version 一致 → 在命令输出最前面展示全部内容（`---` 包围，加「📣 更新提醒」标题）
-   - 若 `{skill目录}/WHATSNEW.md` 不存在，或首个版本号与 current_version 不一致 → 在命令输出最前面展示内置更新提醒：”v1.35.0 更新：接入网文大数据 MCP，新增 /短剧市场 命令查看 6 板块市场报告；/选题会 /策划 可选调用实时榜单；/配置数据 在对话里完成 Key 配置。另：剧本正文破折号完全禁用，`——`、`—`、`--` 任意出现均标【严重】。”
+   - 若 `{skill目录}/WHATSNEW.md` 不存在，或首个版本号与 current_version 不一致 → 在命令输出最前面展示内置更新提醒：”v1.35.1 更新：接入网文大数据 MCP，安装时可配置 API Key；/选题会 /策划 可选调用实时榜单；新增 /短剧市场 命令查看 6 板块市场报告。另：剧本正文破折号完全禁用，`——`、`—`、`--` 任意出现均标【严重】。”
    - `echo {current_version} > {skill目录}/.last-version-shown` 记录已展示
 4. 版本相同 → 跳过，直接进入格式控制步骤
 
