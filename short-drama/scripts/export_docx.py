@@ -6,15 +6,61 @@
 功能:
   1. 检测 pandoc 是否安装
   2. 未安装时自动安装（macOS/Windows/Linux）
-  3. 调用 pandoc 转换 MD → DOCX
+  3. 预处理 Markdown：确保 △/对白/括号/标题等脚本元素前后有空行（防 pandoc 合段）
+  4. 调用 pandoc 转换 MD → DOCX
 """
 
 import os
+import re
 import subprocess
 import sys
 import shutil
 import platform
+import tempfile
 from pathlib import Path
+
+
+def preprocess_script_md(content: str) -> str:
+    """确保剧本 Markdown 中每个功能性元素前后有空行。
+
+    pandoc 默认把连续行（无空行分隔）视为同一段落。
+    剧本格式中 △/对白/**/ 括号 / 分隔线 / 标题 每行都应是独立段落，
+    必须保证前后各有一个空行。
+
+    原文件不会被修改；调用方使用临时文件。
+    """
+    # 需要独立成段的行前缀模式（匹配行首）
+    SCRIPT_PATTERNS = [
+        r"^△",          # 场景/动作描写
+        r"^\*\*\S",     # 对白（**角色名** 开头）
+        r"^（",          # 括号指示（BGM / 音效 / 字幕）
+        r"^【",          # 【闪回】【闪出】等
+        r"^---\s*$",    # 分隔线（场景间）
+        r"^#{1,6} ",    # Markdown 标题
+    ]
+
+    def is_script_line(s: str) -> bool:
+        return any(re.match(p, s) for p in SCRIPT_PATTERNS)
+
+    lines = content.splitlines()
+    result: list[str] = []
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+
+        # 当前行是脚本功能行，且前一行非空 → 插入空行
+        if is_script_line(stripped) and result and result[-1].strip():
+            result.append("")
+
+        result.append(line)
+
+        # 当前行是脚本功能行，且下一行非空 → 追加空行
+        if is_script_line(stripped):
+            next_line = lines[i + 1] if i + 1 < len(lines) else ""
+            if next_line.strip():
+                result.append("")
+
+    return "\n".join(result)
 
 
 def detect_os():
@@ -123,20 +169,36 @@ def export_docx(input_path, output_path, ref_doc=None):
     # 确保输出目录存在
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # 构建 pandoc 命令
-    cmd = ["pandoc", str(input_file), "-o", str(output_file), "--wrap=none"]
+    # 预处理：确保剧本功能行前后有空行，防止 pandoc 合并段落
+    raw_content = input_file.read_text(encoding="utf-8")
+    processed_content = preprocess_script_md(raw_content)
 
-    if ref_doc and Path(ref_doc).exists():
-        cmd.append(f"--reference-doc={ref_doc}")
-        print(f"[样式] 使用模板: {Path(ref_doc).name}")
-
+    # 写入临时文件（与输入文件同目录，确保相对路径引用不受影响）
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".md", dir=input_file.parent, prefix=".tmp-export-")
     try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            f.write(processed_content)
+
+        # 构建 pandoc 命令（使用预处理后的临时文件）
+        cmd = ["pandoc", tmp_path, "-o", str(output_file), "--wrap=none"]
+
+        if ref_doc and Path(ref_doc).exists():
+            cmd.append(f"--reference-doc={ref_doc}")
+            print(f"[样式] 使用模板: {Path(ref_doc).name}")
+
         subprocess.run(cmd, check=True)
         print(f"[完成] Word 文件已生成: {output_path}")
         return True
+
     except subprocess.CalledProcessError as e:
         print(f"[错误] pandoc 转换失败: {e}", file=sys.stderr)
         return False
+    finally:
+        # 清理临时文件
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
 
 
 def main():
