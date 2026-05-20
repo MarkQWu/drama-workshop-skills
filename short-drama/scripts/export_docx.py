@@ -195,25 +195,32 @@ def _add_hr(doc):
 
 # 优先级从高到低匹配
 _KIND_RULES = [
-    (re.compile(r"^# (?!#)"),    "h1"),       # 剧本标题
-    (re.compile(r"^### "),       "h3"),        # 集标题
-    (re.compile(r"^## "),        "h2"),        # 场景标题
-    (re.compile(r"^---\s*$"),    "hr"),        # 分隔线
-    (re.compile(r"^△"),          "action"),    # △ 动作/场景描写
-    (re.compile(r"^\*\*\S"),     "dialogue"),  # **角色名** 对白
-    (re.compile(r"^（"),          "cue"),       # （BGM / 字幕 / 音效）
-    (re.compile(r"^【"),          "cue"),       # 【闪回】【闪出】
+    (re.compile(r"^# (?!#)"),    "h1"),         # 剧本标题
+    (re.compile(r"^### "),       "h3"),          # 集标题
+    (re.compile(r"^## "),        "h2"),          # 场景标题
+    (re.compile(r"^---\s*$"),    "hr"),          # 分隔线
+    (re.compile(r"^>"),          "blockquote"),  # > 前情提要 / 关键词 等注释行
+    (re.compile(r"^<!--"),       "comment"),     # <!-- HTML 注释，剧本内部标记 -->
+    (re.compile(r"^△"),          "action"),      # △ 动作/场景描写
+    (re.compile(r"^\*\*\S"),     "dialogue"),    # **角色名** 对白
+    (re.compile(r"^（"),          "cue"),         # （BGM / 字幕 / 音效）
+    (re.compile(r"^【"),          "cue"),         # 【闪回】【闪出】
 ]
 
 
 def classify(line: str):
-    """返回 (kind, content)；content 对标题类已去掉 # 前缀"""
+    """返回 (kind, content)；content 对标题类去掉 # 前缀，blockquote 去掉 > 前缀"""
     s = line.strip()
     if not s:
         return "blank", ""
     for pattern, kind in _KIND_RULES:
         if pattern.match(s):
-            content = re.sub(r"^#+\s*", "", s) if kind in ("h1", "h2", "h3") else s
+            if kind in ("h1", "h2", "h3"):
+                content = re.sub(r"^#+\s*", "", s)
+            elif kind == "blockquote":
+                content = re.sub(r"^>\s*", "", s)  # 剥掉 > 前缀
+            else:
+                content = s
             return kind, content
     return "body", s
 
@@ -268,6 +275,16 @@ def convert(md_text: str, output_path: str) -> bool:
             # 场景指示：（BGM）/ 【闪回】等
             _add_para(doc, content,
                       space_before=0, space_after=4)
+
+        elif kind == "blockquote":
+            # > 前情提要 / 本集关键词 等注释行：斜体 10pt，灰色（不加粗）
+            _add_para(doc, content,
+                      bold=False, size_pt=10,
+                      space_before=0, space_after=3)
+
+        elif kind == "comment":
+            # <!-- ... --> HTML 注释：直接跳过，不写入 Word
+            continue
 
         else:  # body
             _add_para(doc, content,
