@@ -138,6 +138,31 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 **入口软提示（命令开始时执行）：** 检查 `.drama-state.json#clashes`——若为空，在生成方案前输出一句：「💡 还没开过选题会。建议先跑 `/选题会` 验证赛道（3 位专家碰撞，5 分钟）。直接继续请回复"继续"。」用户回复"继续"或任意命令则正常推进；`clashes` 非空则跳过此提示。
 
+**数据增强（MCP 可用时，入口执行）：**
+
+若 `wangwen-bigdata` MCP 工具可用，在生成创作方案前询问：「💡 是否调用网文大数据 MCP 进行数据驱动的五步选题流程？（约 3-8 Credits，比内置方法论更贴近当前市场，Y/n）」
+
+确认后按以下五步执行（不确认则直接走内置方法论）：
+
+**Step 1 榜单扫描（约 1-2 Credits）：** 先读 `resource://domain-novel` 或 `resource://domain-video` 获取表结构，再查同题材近期作品：
+```sql
+SELECT title, heat_score, uv_14d, genre_tags
+FROM dw_jm.dwd_video_base_df
+WHERE rank_date >= CURRENT_DATE - 7
+ORDER BY heat_score DESC LIMIT 10
+```
+以表格输出 TOP 10（书名/剧名 | 类别 | UV_14d | 热度 | 是否有改编）
+
+**Step 2 爆款拆解（每本约 1 Credit）：** 对 TOP 3 作品调 MCP 抓取六维标签（世界观 / 人设 / 人物关系 / 金手指 / 剧情钩子 / 氛围），提炼「核心 DNA」：三幕结构 / CP 张力 / 情绪链条
+
+**Step 3 灵感碰撞（无额外消耗）：** 保留骨架 DNA，替换世界观和人设，输出 3 张风格迥异的灵感卡片，每张标注来自哪个爆款的哪个 DNA 元素
+
+**Step 4 用户确认卡片后，** 进入内置方法论生成完整创作方案（保留 /策划 的全部 11 步，以灵感卡片的 DNA 数据作为输入端参数）
+
+- MCP 可用但用户跳过（选 N）：直接走内置方法论，结束提示用原版 `[完成]` 行，不再附 `/配置数据` 提示
+- MCP 不可用（未配置 Key）：走内置方法论，**结束提示改为**：
+  `[完成] 创作方案已保存！输入 /角色开发 开始塑造人物 | 📊 想用实时榜单数据驱动下次策划？输入 /配置数据 完成网文大数据 Key 设置`
+
 **加载参考：** three-layer-control.md（按骨架层 75% 锁 story promise / main conflict / payoff / hook，释放具体实现）, opening-rules.md, paywall-design.md, rhythm-curve.md, satisfaction-matrix.md, creative-intent-ledger.md, **plot-types.md（"一句话故事线 + 核心冲突" 时从 40 种情节类型组合 2-5 个）**, **genre-guide.md（读选定题材的 `### anchor 参考` section，如有）**。国内模式额外读取 commercial-ledger-cn.md（追踪观众买单理由、付费卡点账本、爽点兑现账本、反派压力轨迹）。若 `.drama-state.json#mode == "overseas"`，额外先读 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`anti-patterns.md`、`anti-domestic-transfer.md`、`anti-structure-import.md`、`compliance-risk.md`，并以海外分层资料覆盖国内策划模板，不读取、不套用国内商业账本。
 
 **anchor 推荐步骤（v1.23.0，全 13 题材触发）：** **生成内容前**按 `references/anchor-trigger.md#策划-anchor-推荐步骤` 执行推荐并写入 `creative-plan.md#anchor` 字段。
@@ -163,31 +188,6 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 **输出：** 保存为 `creative-plan.md`
 
 **结束提示：** `[完成] 创作方案已保存！输入 /角色开发 开始塑造人物`
-
-**数据增强（MCP 可用时）：**
-
-若 `wangwen-bigdata` MCP 工具可用，在生成创作方案前询问：「💡 是否调用网文大数据 MCP 进行数据驱动的五步选题流程？（约 3-8 Credits，比内置方法论更贴近当前市场，Y/n）」
-
-确认后按以下五步执行（不确认则直接走内置方法论）：
-
-**Step 1 榜单扫描（约 1-2 Credits）：** 先读 `resource://domain-novel` 或 `resource://domain-video` 获取表结构，再查同题材近期作品：
-```sql
-SELECT title, heat_score, uv_14d, genre_tags
-FROM dw_jm.dwd_video_base_df
-WHERE rank_date >= CURRENT_DATE - 7
-ORDER BY heat_score DESC LIMIT 10
-```
-以表格输出 TOP 10（书名/剧名 | 类别 | UV_14d | 热度 | 是否有改编）
-
-**Step 2 爆款拆解（每本约 1 Credit）：** 对 TOP 3 作品调 MCP 抓取六维标签（世界观 / 人设 / 人物关系 / 金手指 / 剧情钩子 / 氛围），提炼「核心 DNA」：三幕结构 / CP 张力 / 情绪链条
-
-**Step 3 灵感碰撞（无额外消耗）：** 保留骨架 DNA，替换世界观和人设，输出 3 张风格迥异的灵感卡片，每张标注来自哪个爆款的哪个 DNA 元素
-
-**Step 4 用户确认卡片后，** 进入内置方法论生成完整创作方案（保留 /策划 的全部 11 步，以灵感卡片的 DNA 数据作为输入端参数）
-
-- MCP 可用但用户跳过（选 N）：直接走内置方法论，结束提示用原版 `[完成]` 行，不再附 `/配置数据` 提示
-- MCP 不可用（未配置 Key）：走内置方法论，**结束提示改为**（替换上方 `[完成]` 行）：
-  `[完成] 创作方案已保存！输入 /角色开发 开始塑造人物 | 📊 想用实时榜单数据驱动下次策划？输入 /配置数据 完成网文大数据 Key 设置`
 
 ---
 
