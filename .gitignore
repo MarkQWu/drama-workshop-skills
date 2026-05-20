@@ -19,3 +19,6 @@ __pycache__/
 # 2026-04-21 决策：CHANGELOG 作为自由文本叙事字段诱导开发笔记泄漏客户名到公开仓库，
 # 删公开仓库版 + 本地保留作者参考 + gitignore 兜底。版本历史对外走 GitHub Releases + git log。
 /CHANGELOG.md
+
+# MCP 配置含本地 API Key，不进公开仓库（committed 版本是 placeholder，本地覆盖含真实 key）
+short-drama/.mcp.json

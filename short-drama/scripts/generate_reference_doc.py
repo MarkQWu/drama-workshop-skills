@@ -30,12 +30,36 @@ def create_reference_doc(output_path: str):
     section.right_margin = Cm(3.17)
 
     # --- 样式定义 ---
+    # space_before/space_after 单位 Pt；line_spacing 为倍数
     style_config = {
-        "Normal": {"font": "宋体", "font_en": "Times New Roman", "size": 12, "line_spacing": 1.5},
-        "Heading 1": {"font": "黑体", "font_en": "Arial", "size": 22, "bold": True, "space_before": 24, "space_after": 12},
-        "Heading 2": {"font": "黑体", "font_en": "Arial", "size": 18, "bold": True, "space_before": 18, "space_after": 6},
-        "Heading 3": {"font": "黑体", "font_en": "Arial", "size": 16, "bold": True, "space_before": 12, "space_after": 6},
-        "Title": {"font": "黑体", "font_en": "Arial", "size": 26, "bold": True, "alignment": WD_ALIGN_PARAGRAPH.CENTER},
+        # Normal：正文基础样式，space_after=6 防止段落视觉粘连
+        "Normal": {
+            "font": "宋体", "font_en": "Times New Roman",
+            "size": 12, "line_spacing": 1.5,
+            "space_before": 0, "space_after": 6,
+        },
+        "Heading 1": {
+            "font": "黑体", "font_en": "Arial",
+            "size": 22, "bold": True,
+            "space_before": 24, "space_after": 12,
+        },
+        # Heading 2：场景标题（## N-M · 地点 · 日夜）
+        "Heading 2": {
+            "font": "黑体", "font_en": "Arial",
+            "size": 14, "bold": True,
+            "space_before": 18, "space_after": 6,
+        },
+        # Heading 3：集标题（### 第N集：...）
+        "Heading 3": {
+            "font": "黑体", "font_en": "Arial",
+            "size": 16, "bold": True,
+            "space_before": 24, "space_after": 8,
+        },
+        "Title": {
+            "font": "黑体", "font_en": "Arial",
+            "size": 26, "bold": True,
+            "alignment": WD_ALIGN_PARAGRAPH.CENTER,
+        },
     }
 
     for style_name, cfg in style_config.items():

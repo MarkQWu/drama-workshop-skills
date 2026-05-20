@@ -21,7 +21,7 @@
   "package_root": "short-drama",
   "version_source": "VERSION",
   "whatsnew_source": "WHATSNEW.md",
-  "help_source": "references/output-templates.md#帮助",
+  "help_source": "references/output-templates-aux.md#帮助",
   "update_mechanism_source": "references/update-mechanism.md",
   "authority_sources": {
     "skill_entrypoint": "SKILL.md",
@@ -107,7 +107,7 @@
       "short-drama/WHATSNEW.md",
       "short-drama/bin/update-check",
       "short-drama/references/update-mechanism.md",
-      "short-drama/references/output-templates.md",
+      "short-drama/references/output-templates-aux.md",
       "short-drama/scripts/release.sh",
       "short-drama/scripts/sync-all-locations.sh",
       ".github/workflows/release.yml"
@@ -157,7 +157,7 @@
     },
     {
       "name": "help_source_match",
-      "authority": "short-drama/references/output-templates.md#帮助"
+      "authority": "short-drama/references/output-templates-aux.md#帮助"
     },
     {
       "name": "update_policy_repo_name",

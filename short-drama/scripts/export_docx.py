@@ -1,171 +1,328 @@
 #!/usr/bin/env python3
-"""短剧剧本 Markdown → Word 导出脚本（跨平台）
+"""短剧剧本 Markdown → Word 导出脚本（纯 python-docx 版）
 
-用法: python3 scripts/export_docx.py <输入.md> <输出.docx> [reference-doc路径]
+用法: python3 scripts/export_docx.py <输入.md> <输出.docx>
 
 功能:
-  1. 检测 pandoc 是否安装
-  2. 未安装时自动安装（macOS/Windows/Linux）
-  3. 调用 pandoc 转换 MD → DOCX
+  1. 检测 python-docx / lxml 是否安装，缺失时自动通过 pip 安装
+  2. 逐行解析剧本 Markdown（# / ## / ### / △ / 对白 / 括号 / 分隔线）
+  3. 用 python-docx 直接生成 .docx，精确控制中文字体（w:eastAsia）和间距
+  4. 参照专业剧本排版：宋体/黑体 12pt，全文加粗，1.5倍行距
+
+注意: 第三个位置参数（reference-doc 路径）已不再使用，保留接口兼容性。
 """
 
-import os
+import re
 import subprocess
 import sys
-import shutil
-import platform
 from pathlib import Path
 
 
-def detect_os():
-    s = platform.system()
-    if s == "Darwin":
-        return "mac"
-    elif s == "Windows":
-        return "win"
-    else:
-        return "linux"
+# ─────────────────────── 依赖检测与自动安装 ───────────────────────
 
-
-def pandoc_available():
-    return shutil.which("pandoc") is not None
-
-
-def install_pandoc():
-    os_type = detect_os()
-    print("[检测] pandoc 未安装")
-    print("[说明] pandoc 是开源文档转换工具（https://pandoc.org），用于将剧本导出为 Word 格式")
-    print("[说明] 仅需安装一次，后续导出直接使用")
-    print("")
-    print("[安装] 正在自动安装...")
-
+def _pip_install(pkgs: list[str]) -> bool:
+    """尝试用 pip 安装缺失包，返回是否成功"""
+    pkg_str = " ".join(pkgs)
+    print(f"[安装] 正在自动安装依赖: pip install {pkg_str}")
+    print("[说明] python-docx 和 lxml 是开源 Python 库，仅需安装一次")
     try:
-        if os_type == "mac":
-            if shutil.which("brew"):
-                print("[安装] brew install pandoc")
-                subprocess.run(["brew", "install", "pandoc"], check=True)
-            else:
-                print("[错误] Homebrew 未安装，无法自动安装 pandoc", file=sys.stderr)
-                return False
-
-        elif os_type == "win":
-            if shutil.which("winget"):
-                print("[安装] winget install pandoc")
-                subprocess.run(
-                    ["winget", "install", "--id", "JohnMacFarlane.Pandoc", "-e", "--accept-source-agreements"],
-                    check=True,
-                )
-            elif shutil.which("choco"):
-                print("[安装] choco install pandoc")
-                subprocess.run(["choco", "install", "pandoc", "-y"], check=True)
-            elif shutil.which("scoop"):
-                print("[安装] scoop install pandoc")
-                subprocess.run(["scoop", "install", "pandoc"], check=True)
-            else:
-                print("[错误] 未找到 winget/choco/scoop，无法自动安装", file=sys.stderr)
-                return False
-
-        else:  # linux
-            if shutil.which("apt"):
-                print("[安装] apt install pandoc")
-                subprocess.run(["sudo", "apt", "install", "-y", "pandoc"], check=True)
-            elif shutil.which("dnf"):
-                print("[安装] dnf install pandoc")
-                subprocess.run(["sudo", "dnf", "install", "-y", "pandoc"], check=True)
-            else:
-                print("[错误] 未找到 apt/dnf，无法自动安装", file=sys.stderr)
-                return False
-
-        # 验证安装结果（Windows 安装后 PATH 可能未刷新，尝试常见安装路径）
-        if pandoc_available():
-            pass
-        elif os_type == "win":
-            win_paths = [
-                Path(os.environ.get("LOCALAPPDATA", ""), "Pandoc"),
-                Path("C:/Program Files/Pandoc"),
-                Path(os.environ.get("USERPROFILE", ""), "scoop", "shims"),
-            ]
-            for p in win_paths:
-                if (p / "pandoc.exe").exists():
-                    os.environ["PATH"] = str(p) + os.pathsep + os.environ.get("PATH", "")
-                    break
-
-        if pandoc_available():
-            result = subprocess.run(["pandoc", "--version"], capture_output=True, text=True)
-            version = result.stdout.split("\n")[0] if result.stdout else "unknown"
-            print(f"[成功] pandoc 安装完成: {version}")
-            return True
-        else:
-            print("[错误] 安装命令执行完毕但 pandoc 仍不可用", file=sys.stderr)
-            return False
-
-    except subprocess.CalledProcessError as e:
-        print(f"[错误] 安装失败: {e}", file=sys.stderr)
-        return False
-
-
-def print_manual_install_help():
-    print("[提示] pandoc 自动安装失败，请手动安装后重试")
-    print("[Mac]   brew install pandoc")
-    print("[Win]   winget install --id JohnMacFarlane.Pandoc -e")
-    print("[Linux] sudo apt install -y pandoc")
-    print("[备选]  在线转换: https://markdowntoword.io/zh")
-
-
-def export_docx(input_path, output_path, ref_doc=None):
-    input_file = Path(input_path)
-    output_file = Path(output_path)
-
-    if not input_file.exists():
-        print(f"[错误] 输入文件不存在: {input_path}", file=sys.stderr)
-        return False
-
-    # 确保输出目录存在
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-
-    # 构建 pandoc 命令
-    cmd = ["pandoc", str(input_file), "-o", str(output_file), "--wrap=none"]
-
-    if ref_doc and Path(ref_doc).exists():
-        cmd.append(f"--reference-doc={ref_doc}")
-        print(f"[样式] 使用模板: {Path(ref_doc).name}")
-
-    try:
-        subprocess.run(cmd, check=True)
-        print(f"[完成] Word 文件已生成: {output_path}")
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--quiet", *pkgs],
+            check=True,
+        )
+        print(f"[成功] 安装完成: {pkg_str}")
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"[错误] pandoc 转换失败: {e}", file=sys.stderr)
+    except subprocess.CalledProcessError:
         return False
 
+
+def check_deps() -> bool:
+    """检测依赖，缺失时自动安装；返回最终是否可用"""
+    missing = []
+    try:
+        import docx  # noqa
+    except ImportError:
+        missing.append("python-docx")
+    try:
+        from lxml import etree  # noqa
+    except ImportError:
+        missing.append("lxml")
+
+    if not missing:
+        return True
+
+    # 尝试自动安装
+    if _pip_install(missing):
+        # 重新验证
+        ok = True
+        if "python-docx" in missing:
+            try:
+                import docx  # noqa
+            except ImportError:
+                ok = False
+        if "lxml" in missing:
+            try:
+                from lxml import etree  # noqa
+            except ImportError:
+                ok = False
+        if ok:
+            return True
+
+    # 自动安装失败，给出手动提示
+    pkgs = " ".join(missing)
+    print(f"[错误] 自动安装失败，请手动安装后重试:", file=sys.stderr)
+    print(f"  pip3 install {pkgs}", file=sys.stderr)
+    return False
+
+
+# ─────────────────────── 文档初始化 ───────────────────────
+
+def _set_east_asia(rpr_elem, font_cn: str):
+    """在 rPr XML 元素上设置 w:eastAsia 中文字体属性"""
+    from docx.oxml.ns import qn
+    from lxml import etree
+
+    rFonts = rpr_elem.find(qn("w:rFonts"))
+    if rFonts is None:
+        rFonts = etree.SubElement(rpr_elem, qn("w:rFonts"))
+    rFonts.set(qn("w:eastAsia"), font_cn)
+
+
+def init_document():
+    """创建文档，设置 A4 页面 + 全局 Normal 样式"""
+    from docx import Document
+    from docx.shared import Pt, Cm
+
+    doc = Document()
+
+    # A4 页面，标准页边距
+    sec = doc.sections[0]
+    sec.page_width  = Cm(21.0)
+    sec.page_height = Cm(29.7)
+    sec.top_margin    = Cm(2.54)
+    sec.bottom_margin = Cm(2.54)
+    sec.left_margin   = Cm(3.17)
+    sec.right_margin  = Cm(3.17)
+
+    # Normal 基础样式：宋体 12pt 加粗，1.5倍行距，6pt 段后间距
+    normal = doc.styles["Normal"]
+    normal.font.size  = Pt(12)
+    normal.font.bold  = True
+    normal.font.name  = "Times New Roman"   # 英文/Latin 字体
+    normal.paragraph_format.line_spacing  = 1.5
+    normal.paragraph_format.space_before  = Pt(0)
+    normal.paragraph_format.space_after   = Pt(6)
+    _set_east_asia(normal.element.get_or_add_rPr(), "宋体")
+
+    return doc
+
+
+# ─────────────────────── Run 辅助 ───────────────────────
+
+def _make_run(para, text: str, bold: bool = True, size_pt: int = 12,
+              font_en: str = "Times New Roman", font_cn: str = "宋体"):
+    """添加一个 run，同时设置中英文字体"""
+    from docx.shared import Pt
+    from docx.oxml.ns import qn
+    from lxml import etree
+
+    run = para.add_run(text)
+    run.bold       = bold
+    run.font.size  = Pt(size_pt)
+    run.font.name  = font_en
+
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.find(qn("w:rFonts"))
+    if rFonts is None:
+        rFonts = etree.SubElement(rPr, qn("w:rFonts"))
+    rFonts.set(qn("w:eastAsia"), font_cn)
+    return run
+
+
+def _add_para(doc, text: str, *,
+              bold: bool = True, size_pt: int = 12,
+              font_en: str = "Times New Roman", font_cn: str = "宋体",
+              space_before: float = 0, space_after: float = 6,
+              alignment=None):
+    """
+    添加段落，自动解析内联 **粗体** 标记。
+    ** 包裹的部分强制加粗，其余部分使用 bold 参数值。
+    """
+    from docx.shared import Pt
+
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(space_before)
+    p.paragraph_format.space_after  = Pt(space_after)
+    if alignment is not None:
+        p.paragraph_format.alignment = alignment
+
+    # 拆分内联 **bold** 标记（非贪婪，不跨行）
+    segments = re.split(r"(\*\*[^*\n]+\*\*)", text)
+    for seg in segments:
+        if not seg:
+            continue
+        if seg.startswith("**") and seg.endswith("**"):
+            _make_run(p, seg[2:-2], bold=True,
+                      size_pt=size_pt, font_en=font_en, font_cn=font_cn)
+        else:
+            _make_run(p, seg, bold=bold,
+                      size_pt=size_pt, font_en=font_en, font_cn=font_cn)
+    return p
+
+
+def _add_hr(doc):
+    """添加场景分隔线：底边框细线"""
+    from docx.shared import Pt
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(4)
+    p.paragraph_format.space_after  = Pt(4)
+
+    pPr   = p._p.get_or_add_pPr()
+    pBdr  = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"),   "single")
+    bottom.set(qn("w:sz"),    "4")       # 0.5pt 细线
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "999999")  # 浅灰
+    pBdr.append(bottom)
+    pPr.append(pBdr)
+
+
+# ─────────────────────── 行分类 ───────────────────────
+
+# 优先级从高到低匹配
+_KIND_RULES = [
+    (re.compile(r"^# (?!#)"),    "h1"),         # 剧本标题
+    (re.compile(r"^### "),       "h3"),          # 集标题
+    (re.compile(r"^## "),        "h2"),          # 场景标题
+    (re.compile(r"^---\s*$"),    "hr"),          # 分隔线
+    (re.compile(r"^>"),          "blockquote"),  # > 前情提要 / 关键词 等注释行
+    (re.compile(r"^<!--"),       "comment"),     # <!-- HTML 注释，剧本内部标记 -->
+    (re.compile(r"^△"),          "action"),      # △ 动作/场景描写
+    (re.compile(r"^\*\*\S"),     "dialogue"),    # **角色名** 对白
+    (re.compile(r"^（"),          "cue"),         # （BGM / 字幕 / 音效）
+    (re.compile(r"^【"),          "cue"),         # 【闪回】【闪出】
+]
+
+
+def classify(line: str):
+    """返回 (kind, content)；content 对标题类去掉 # 前缀，blockquote 去掉 > 前缀"""
+    s = line.strip()
+    if not s:
+        return "blank", ""
+    for pattern, kind in _KIND_RULES:
+        if pattern.match(s):
+            if kind in ("h1", "h2", "h3"):
+                content = re.sub(r"^#+\s*", "", s)
+            elif kind == "blockquote":
+                content = re.sub(r"^>\s*", "", s)  # 剥掉 > 前缀
+            else:
+                content = s
+            return kind, content
+    return "body", s
+
+
+# ─────────────────────── 主转换 ───────────────────────
+
+def convert(md_text: str, output_path: str) -> bool:
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = init_document()
+
+    for line in md_text.splitlines():
+        kind, content = classify(line)
+
+        if kind == "blank":
+            # 间距完全由段落 space_before / space_after 控制，不插入空段落
+            continue
+
+        elif kind == "hr":
+            _add_hr(doc)
+
+        elif kind == "h1":
+            # 剧本总标题：黑体 22pt，居中
+            _add_para(doc, content,
+                      size_pt=22, font_cn="黑体", font_en="Arial",
+                      space_before=0, space_after=12,
+                      alignment=WD_ALIGN_PARAGRAPH.CENTER)
+
+        elif kind == "h3":
+            # 集标题（### 第N集：...）：黑体 16pt
+            _add_para(doc, content,
+                      size_pt=16, font_cn="黑体", font_en="Arial",
+                      space_before=24, space_after=8)
+
+        elif kind == "h2":
+            # 场景标题（## N-M · 地点 · 日夜）：黑体 14pt
+            _add_para(doc, content,
+                      size_pt=14, font_cn="黑体", font_en="Arial",
+                      space_before=18, space_after=6)
+
+        elif kind == "action":
+            # △ 动作/场景描写：宋体 12pt 加粗
+            _add_para(doc, content,
+                      space_before=0, space_after=5)
+
+        elif kind == "dialogue":
+            # 对白：**角色名**（括号）台词，内联粗体解析
+            _add_para(doc, content,
+                      space_before=0, space_after=4)
+
+        elif kind == "cue":
+            # 场景指示：（BGM）/ 【闪回】等
+            _add_para(doc, content,
+                      space_before=0, space_after=4)
+
+        elif kind == "blockquote":
+            # > 前情提要 / 本集关键词 等注释行：斜体 10pt，灰色（不加粗）
+            _add_para(doc, content,
+                      bold=False, size_pt=10,
+                      space_before=0, space_after=3)
+
+        elif kind == "comment":
+            # <!-- ... --> HTML 注释：直接跳过，不写入 Word
+            continue
+
+        else:  # body
+            _add_para(doc, content,
+                      space_before=0, space_after=6)
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    doc.save(output_path)
+    print(f"[完成] Word 文件已生成: {output_path}")
+    return True
+
+
+# ─────────────────────── 入口 ───────────────────────
 
 def main():
     if len(sys.argv) == 2 and sys.argv[1] in {"-h", "--help"}:
-        print("用法: python3 export_docx.py <输入.md> <输出.docx> [reference-doc]")
+        print("用法: python3 export_docx.py <输入.md> <输出.docx>")
         sys.exit(0)
 
     if len(sys.argv) < 3:
-        print("用法: python3 export_docx.py <输入.md> <输出.docx> [reference-doc]")
+        print("用法: python3 export_docx.py <输入.md> <输出.docx>")
         sys.exit(1)
 
-    input_path = sys.argv[1]
+    if not check_deps():
+        print("[提示] Mac:   pip3 install python-docx lxml")
+        print("[提示] Win:   pip install python-docx lxml")
+        print("[提示] Linux: pip3 install python-docx lxml")
+        sys.exit(1)
+
+    input_path  = Path(sys.argv[1])
     output_path = sys.argv[2]
+    # sys.argv[3]（旧版 reference-doc 路径）已不再使用，静默忽略
 
-    # reference-doc 默认路径
-    script_dir = Path(__file__).resolve().parent
-    skill_dir = script_dir.parent
-    default_ref = skill_dir / "assets" / "drama-reference.docx"
-    ref_doc = sys.argv[3] if len(sys.argv) > 3 else str(default_ref)
+    if not input_path.exists():
+        print(f"[错误] 输入文件不存在: {input_path}", file=sys.stderr)
+        sys.exit(1)
 
-    # Step 1: 检测 pandoc
-    if not pandoc_available():
-        # Step 2: 自动安装
-        if not install_pandoc():
-            print_manual_install_help()
-            sys.exit(1)
-
-    # Step 3: 转换
-    if not export_docx(input_path, output_path, ref_doc):
+    md_text = input_path.read_text(encoding="utf-8")
+    if not convert(md_text, output_path):
         sys.exit(1)
 
 

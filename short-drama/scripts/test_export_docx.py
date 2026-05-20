@@ -56,22 +56,22 @@ def assert_true(condition, test_name, detail=""):
 # =============================================================
 
 def test_normal_export_with_template():
-    """正常导出：有模板，生成 docx，输出含 [样式] 和 [完成]"""
+    """正常导出：第三参数（旧 reference-doc）被静默忽略，仍正常生成 docx"""
     print("\n[TEST] 正常导出（有模板）")
     with tempfile.TemporaryDirectory() as tmp:
         md = Path(tmp) / "test.md"
         docx = Path(tmp) / "test.docx"
         md.write_text("# 测试剧本\n\n第一行内容", encoding="utf-8")
 
+        # v1.38.0 起不再使用 reference-doc，第三参数静默忽略
         code, out, err = run_export(md, docx, ref_doc=REF_DOC)
         assert_true(code == 0, "exit code 为 0", f"实际: {code}")
         assert_true(docx.exists(), "docx 文件已生成")
-        assert_true("[样式]" in out, "stdout 含 [样式]")
         assert_true("[完成]" in out, "stdout 含 [完成]")
 
 
 def test_normal_export_without_template():
-    """正常导出：无模板，生成 docx，无 [样式] 但有 [完成]"""
+    """正常导出：不传第三参数，正常生成 docx"""
     print("\n[TEST] 正常导出（无模板）")
     with tempfile.TemporaryDirectory() as tmp:
         md = Path(tmp) / "test.md"
@@ -81,7 +81,6 @@ def test_normal_export_without_template():
         code, out, err = run_export(md, docx, ref_doc="/nonexistent/fake.docx")
         assert_true(code == 0, "exit code 为 0", f"实际: {code}")
         assert_true(docx.exists(), "docx 文件已生成")
-        assert_true("[样式]" not in out, "stdout 不含 [样式]")
         assert_true("[完成]" in out, "stdout 含 [完成]")
 
 
