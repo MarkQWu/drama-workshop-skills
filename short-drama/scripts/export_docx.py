@@ -4,7 +4,7 @@
 用法: python3 scripts/export_docx.py <输入.md> <输出.docx>
 
 功能:
-  1. 检测 python-docx / lxml 是否安装，未安装时给出安装指令
+  1. 检测 python-docx / lxml 是否安装，缺失时自动通过 pip 安装
   2. 逐行解析剧本 Markdown（# / ## / ### / △ / 对白 / 括号 / 分隔线）
   3. 用 python-docx 直接生成 .docx，精确控制中文字体（w:eastAsia）和间距
   4. 参照专业剧本排版：宋体/黑体 12pt，全文加粗，1.5倍行距
@@ -13,13 +13,31 @@
 """
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 
-# ─────────────────────── 依赖检测 ───────────────────────
+# ─────────────────────── 依赖检测与自动安装 ───────────────────────
+
+def _pip_install(pkgs: list[str]) -> bool:
+    """尝试用 pip 安装缺失包，返回是否成功"""
+    pkg_str = " ".join(pkgs)
+    print(f"[安装] 正在自动安装依赖: pip install {pkg_str}")
+    print("[说明] python-docx 和 lxml 是开源 Python 库，仅需安装一次")
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--quiet", *pkgs],
+            check=True,
+        )
+        print(f"[成功] 安装完成: {pkg_str}")
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
 
 def check_deps() -> bool:
+    """检测依赖，缺失时自动安装；返回最终是否可用"""
     missing = []
     try:
         import docx  # noqa
@@ -30,11 +48,31 @@ def check_deps() -> bool:
     except ImportError:
         missing.append("lxml")
 
-    if missing:
-        pkgs = " ".join(missing)
-        print(f"[错误] 缺少依赖，请安装: pip3 install {pkgs}", file=sys.stderr)
-        return False
-    return True
+    if not missing:
+        return True
+
+    # 尝试自动安装
+    if _pip_install(missing):
+        # 重新验证
+        ok = True
+        if "python-docx" in missing:
+            try:
+                import docx  # noqa
+            except ImportError:
+                ok = False
+        if "lxml" in missing:
+            try:
+                from lxml import etree  # noqa
+            except ImportError:
+                ok = False
+        if ok:
+            return True
+
+    # 自动安装失败，给出手动提示
+    pkgs = " ".join(missing)
+    print(f"[错误] 自动安装失败，请手动安装后重试:", file=sys.stderr)
+    print(f"  pip3 install {pkgs}", file=sys.stderr)
+    return False
 
 
 # ─────────────────────── 文档初始化 ───────────────────────
