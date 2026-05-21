@@ -23,6 +23,15 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 `/开始` 扫描 `~/short-drama-projects/*/` 让用户选项目，选中后该 `.drama-state.json` 即活跃 state。详细规则（state schema / fallback / 迁移白名单）见 `references/project-management.md`。**强制全局规则**：所有修改 state 的命令（`/开始` `/考据` `/角色开发` `/分集目录` `/分集` `/自检` `/角色卡` `/分镜`）必须 Read-Modify-Write，**严禁** overwrite（见 `project-management.md#state-写入协议`）。
 
+## 角色档案 finalized 门控（读取 characters.md 前强制）
+
+所有会读取 `characters.md` 的命令（`/分集目录`、`/分集`、`/自检`、`/角色一致性`、`/导出`、`/角色卡` 生成模式）在读取前必须检查 `.drama-state.json#characterDevStatus`：
+
+- 字段不存在且 `characters.md` 存在 → 兼容视为 `finalized`。
+- 字段不存在且 `characters.md` 不存在 → 视为 `not_started`，提示先执行 `/角色开发`。
+- 字段存在且 `status != "finalized"` → 默认阻断，不静默读取旧 `characters.md`。
+- 用户必须逐字回复 `继续使用未完成角色档案` 才能临时越过；越过时输出 `[风险] 当前角色档案未 finalized，下游可能 OOC 或缺字段`。
+
 ## 参考资料
 
 所有方法论和模板位于 `references/` 目录。执行命令时按各命令定义中的「加载参考」字段读取对应文件；所有命令的输出格式模板拆为两文件：`references/output-templates-core.md`（主创作流程）和 `references/output-templates-aux.md`（辅助命令）。完整文件清单执行 `ls references/` 或见 git 仓库。
@@ -340,35 +349,104 @@ graph LR
 
 ### /角色开发
 
-**功能：** 生成完整角色体系。
+**功能：** 生成完整角色体系。默认采用分批写入状态机，降低 WorkBuddy 长输出/写盘卡住风险；最终交付仍是旧模板兼容的 `characters.md`。
 
 **视角切换：** [人物] **人物设计师**——你不是在「帮用户写角色」，而是在设计一套能驱动 50-100 集冲突的人物引擎。每个角色必须有足够的内在矛盾和关系张力，不能因为是主角就完美无瑕。**欲望-恐惧对位要互相咬合**（角色最怕的通常是渴望的反面，如渴望认可 ↔ 怕被当废物），voice 样本集的台词必须**真能让该角色说出口**，覆盖不同场景/情绪（5 条不是 5 条同义重复）。三角张力聚焦**动态规律**，不重复 Mermaid 静态连线。
 
 **前置条件：** 已完成 /策划
 
-**重跑语义：** 若 `characters.md` 已存在（老项目或本次重跑），**默认全量覆盖** 15 字段——按新模板重新生成。若老版本有**新模板未覆盖的独有字段**（如更丰富的视觉细节描写、额外背景段落），可在新模板对应字段下追加保留，只替换重合字段，不删除老独有内容。"口头禅/语言特征"单字段必须被 voice 样本集完整替代，**不得**与 voice 样本集并存造成冲突。
+**支持格式：** `/角色开发` | `/角色开发 继续` | `/角色开发 finalize`
 
 **加载参考：** three-layer-control.md（人物核心与关系逻辑归地基层，角色功能归骨架层，voice 样本和口吻归血肉层）, constraint-design.md（约束有效性原则——生成 应激模式 / 声音指纹#禁用清单 等 B 类角色约束字段时，确保约束格式含触发情境 + 替代行为 + 豁免条件，不写纯禁止结构）, villain-design.md, dialogue-craft-cn.md（中文声音指纹：句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / 禁用句式）。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/dialogue-platform.md`、`dialogue-craft.md`、`dialogue-exemplar-risk.md`、`hard-rules.md`，先锁平台可读 voice 边界，再生成 voice 样本集。
 
-**生成内容：**
+**状态机协议（强制）：**
 
-1. **主要角色档案**（含姓名、年龄、外貌、性格、公开/真实身份、核心动机、**欲望-恐惧对位、动机形成契机**、盲点/弱点、冲突点、爽点功能、表面/真实功能、**声音指纹 + voice 样本集（句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / ≥5 条示例台词 + ≥3 条禁用模式）**、视觉提示词——共 15 字段）
-2. **角色-语言风格映射表**（三层映射：角色类型→语言风格→台词生成）
-3. **称呼关系表**（N×N 矩阵，区分公开/私下场合，参考 realism-checklist.md）
-4. **角色关系图**（Mermaid 格式）
-5. **三角张力动态**（≤5 组关键三角的动态互动规律——每次三人同框时会发生什么；不重复角色关系图的静态连线）
-6. **角色弧线设计**
-7. **感情线弧线**
-8. **关键互动场景预设**（第一次冲突、身份揭露、感情转折、终极对决）
-9. **反派体系**（按 villain-design.md 的4层结构）
+所有 state 更新必须按 `project-management.md#state-写入协议` Read-Modify-Write。`.drama-state.json#characterDevStatus` 缺失时：
+- `characters.md` 存在 → 兼容视为 `finalized`。
+- `characters.md` 不存在 → 视为 `not_started`。
+
+`characterDevStatus` 完整 schema 见 `references/project-management.md#字段说明characterdevstatusv1390-新增`。关键约束：
+- `runId = chars-YYYYMMDD-HHMMSS`，每次新跑/重跑创建独立 `characters.parts/{runId}/`。
+- `rolePlan` 首次生成后冻结；`/角色开发 继续` 不得重新推理角色清单。
+- 分片只写角色档案，不写全局 section。
+- `90-finalize.md` 只写全局 section 草稿。
+- `characters.md` 只在 finalize 验收通过后生成/覆盖。
+- 对话框只输出进度摘要、文件路径和下一步，不贴完整 `characters.md` 全文。
+
+**`/角色开发` 行为：**
+
+1. `status=not_started` 或无 state 且无 `characters.md`：
+   - 读取 `creative-plan.md` 和当前 state。
+   - 冻结 `rolePlan`：按 `core | long_arc | functional` 分层，并按每批 2-3 个角色分配 `batchId`（第一批必须覆盖主角、核心关系对象、主反派/核心压迫者）。
+   - 写 `characters.parts/{runId}/00-role-plan.md`（人类可读）和 `00-role-plan.json`（供 validator 使用）。
+   - 写入 `characterDevStatus`：`status=in_progress`、`runId`、`rolePlan`、`batches`、`currentBatchId`。
+   - 只生成第一批分片，保存到 `characters.parts/{runId}/{batchId}.md`。
+   - 执行分片验收；通过则标 batch=`validated`，失败则 batch=`failed` 且 `status=failed`。
+2. `status=in_progress | rerun_in_progress | failed`：
+   - 等价执行 `/角色开发 继续`，不重建 `rolePlan`。
+3. `status=ready_to_finalize`：
+   - 提示所有角色分片已完成，唯一下一步是 `/角色开发 finalize`。
+4. `status=finalized`：
+   - 提示已有 `characters.md`。若用户明确要求重跑，创建新 `runId`，状态置 `rerun_in_progress`；旧 `characters.md` 保留到新 runId finalize 通过后才覆盖。
+
+**`/角色开发 继续` 行为：**
+
+1. 读取 `characterDevStatus`，只处理当前 `runId`。
+2. 执行恢复检查：
+   - `pending/written` 且分片存在并通过验收 → 修复为 `validated`。
+   - `validated` 但分片不存在 → 标 `failed`，提示重新生成该 batch。
+   - `failed` → 重新生成该 batch。
+   - `status=finalized` 但 `characters.md` 不存在 → 降级 `ready_to_finalize`。
+3. 找第一个 `pending/failed` batch，生成该分片并保存。
+4. 执行分片验收命令：
+   ```bash
+   python3 {skill目录}/scripts/character_dev_validate.py batch \
+     --file "{项目目录}/characters.parts/{runId}/{batchId}.md" \
+     --roles "角色A,角色B"
+   ```
+5. 验收通过：batch=`validated`，更新 `completedRoles/pendingRoles/currentBatchId/updatedAt`。
+6. 所有 batch 均 `validated`：置 `status=ready_to_finalize`，输出唯一下一步 `/角色开发 finalize`。
+
+**`/角色开发 finalize` 行为：**
+
+0. 即使当前 `status=finalized`，用户显式输入 `/角色开发 finalize` 时也必须重新执行 finalize 验收；若现有 `characters.md` 不通过，先把 `status` 降级为 `ready_to_finalize`，不得沿用旧 finalized。
+1. 确认所有 batch 均为 `validated`；否则阻断并提示 `/角色开发 继续`。
+2. 读取当前 `runId` 下所有分片。
+3. 生成 `90-finalize.md`，只包含全局 section；**禁止跳过本步直接拼接分片**：
+   - `## 角色-语言风格映射表`（短版声音差异索引，每角色一行）
+   - `## 称呼关系表`（核心互动称呼表 + 非互动默认规则）
+   - `## 角色关系图`（默认核心关系摘要；Mermaid 可选，不在最小版强制）
+   - `## 三角张力动态`
+   - `## 角色弧线`
+   - `## 感情线弧线`
+   - `## 关键互动场景预设`
+   - `## 反派体系`
+4. 合并生成最终 `characters.md`：`# 剧名：角色档案` + `## 主要角色` + 全部分片角色档案 + `90-finalize.md`。最终文件必须至少包含这些一级二级标题：`## 主要角色`、`## 角色-语言风格映射表`、`## 称呼关系表`、`## 角色关系图`、`## 三角张力动态`、`## 角色弧线`、`## 关键互动场景预设`；若有强反派/对手/压迫者，则必须包含 `## 反派体系`。
+5. 执行 finalize 验收；**只有脚本 exit code = 0 才能写 finalized**：
+   ```bash
+   python3 {skill目录}/scripts/character_dev_validate.py final \
+     --file "{项目目录}/characters.md" \
+     --role-plan "{项目目录}/characters.parts/{runId}/00-role-plan.json" \
+     --project-dir "{项目目录}" \
+     --run-consistency \
+     --run-viz
+   ```
+6. 验收通过后写 `status=finalized`、`finalize.status=validated`、`finalCharactersPath=characters.md`。
+7. 验收失败：**不得**写 `status=finalized`；若此前误写为 finalized，必须回滚为 `ready_to_finalize`；错误写入 `characters.parts/{runId}/validation-report.md`；输出唯一下一步 `/角色开发 finalize`。
+
+**角色分片生成内容：**
+
+每个计划内角色必须包含完整角色块：姓名、年龄、外貌、性格、公开/真实身份、核心动机、**欲望-恐惧对位、动机形成契机**、盲点/弱点、冲突点、爽点功能、表面/真实功能、**声音指纹 + voice 样本集（句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / ≥5 条示例台词 + ≥3 条禁用模式）**、**应激模式**、视觉提示词。`functional` 角色也要有可被下游解析的最小完整字段，不降级成名单。
 
 **输出格式：** 见 `references/output-templates-core.md#角色开发`
 
-**输出：** 保存为 `characters.md`
+**输出：** 分片保存到 `characters.parts/{runId}/`；`/角色开发 finalize` 验收通过后保存最终 `characters.md`
 
 **结束提示：** 根据题材考据强度（见 `genre-guide.md#考据强度判定`）：
-- **厚型/中型**：`[完成] 角色档案已保存！输入 /考据 auto 建立世界观/专业知识底座（厚型必做）`
-- **轻型**：`[完成] 角色档案已保存！输入 /分集目录 规划全剧分集`
+- **分片未完成**：`[进度] 已完成 {已完成角色数}/{总角色数} 个角色 → {分片路径}。继续输入 /角色开发 继续`
+- **ready_to_finalize**：`[进度] 所有角色分片已通过验收。输入 /角色开发 finalize 生成 characters.md`
+- **finalized 厚型/中型**：`[完成] 角色档案已保存！输入 /考据 auto 建立世界观/专业知识底座（厚型必做）`
+- **finalized 轻型**：`[完成] 角色档案已保存！输入 /分集目录 规划全剧分集`
 
 ---
 
@@ -376,7 +454,7 @@ graph LR
 
 **功能：** 为专业题材建立 `setting-bible.md`，让所有专业细节可追溯，杜绝编造。
 
-**前置条件：** 已完成 /角色开发；厚型题材强烈推荐，中型可选，轻型默认跳过（强度判定见 genre-guide.md）
+**前置条件：** 已完成 /角色开发 且 `characterDevStatus.status="finalized"`；厚型题材强烈推荐，中型可选，轻型默认跳过（强度判定见 genre-guide.md）
 
 **支持格式：** `/考据 auto` | `/考据 import {路径}` | `/考据 view` | `/考据 lock`
 
@@ -394,7 +472,7 @@ graph LR
 
 **功能：** 生成全剧分集目录。
 
-**前置条件：** 已完成 /角色开发
+**前置条件：** 已完成 /角色开发 且 `characterDevStatus.status="finalized"`（或老项目兼容视为 finalized）
 
 **加载参考：** three-layer-control.md（分集职责、阶段节奏、关键集和付费点归骨架层，集标题表达归血肉层）, paywall-design.md, rhythm-curve.md。国内模式额外读取 commercial-ledger-cn.md（目录版账本）。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`anti-structure-import.md`、`anti-domestic-transfer.md`、`vertical-filmability.md`，并使用出海分集目录模板，不读取国内商业账本。
 
@@ -428,7 +506,7 @@ graph LR
 
 **视角切换：** [编剧] **职业编剧**——你在写一个会被拍出来的剧本，每句台词都会有演员说出口，每个 △ 描写都会变成画面。写的时候脑子里要有镜头。
 
-**前置条件：** 已完成 /分集目录
+**前置条件：** 已完成 /分集目录；读取 `characters.md` 前执行「角色档案 finalized 门控」
 
 **加载参考：** three-layer-control.md（锁本集 story job / entry pressure / turning point / exit hook，释放具体台词、动作和场面质感）, continuity-protocol.md（跨集剧情记忆、ledger 读写、尾钩义务承接）, opening-rules.md（**仅第 1 集 Read**，其他集跳过）, rhythm-curve.md, satisfaction-matrix.md, hook-design.md, quality-rules.md（跨介质通用规则 + 自检维度）, creative-intent-ledger.md（用于防止分集背离原始前提、核心关系和不可牺牲点）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, **setting-bible.md**（如存在，强制引用专业细节）, **used-lines.md**（存在则读，跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）, **continuity-ledger.md**（存在则读；不存在按 `continuity-protocol.md` 创建或 bootstrap）, **characters.md**（存在则读；只读 声音指纹#禁用清单 和 应激模式 两个字段——生成本集时按应激模式路径写对应角色行为，避免触发禁用清单词）, **对白工艺（默认加载）：** `dialogue-craft-cn.md`（中文对白三问：像这个人 / 有潜台词 / 可动作替代）, **工艺深化（条件加载，v1.32.0）：** 以下文件仅在满足对应条件时 Read，首次生成新集不加载——① `vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏）：**仅当** `episodes/ep{NNN}.md` 已存在（重写/精修场景）**或**用户使用 `--refine` 标志 **或** 上一轮 `/自检` 有工艺类问题待修时读取；② `dramatic-truth.md`（对白真实性 4 症状）：**仅当** `episodes/ep{NNN}.md` 已存在（重写场景，已有对白需诊断）时读取，首次生成不读；③ `script-element-extraction.md`（5 类元素分层 pipeline）：**从 /分集 移除，仅 /分镜 时读取**——/分集 生成剧本正文不需要元素分层管线, **国内模式额外加载：** `commercial-ledger-cn.md`（核对本集买单理由、付费/尾钩压力、爽点兑现状态、反派压力变化）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
 
@@ -528,7 +606,7 @@ graph LR
 
 **视角切换：** [质检] **质检主管**——你不是这个剧本的作者，你是平台方的审稿人。你的 KPI 是淘汰率，不是通过率。对自己之前写的内容零情面，该扣分就扣分，该标【严重】就标。
 
-**前置条件：** 目标集数已完成
+**前置条件：** 目标集数已完成；若需读取 `characters.md` 校验 voice/应激模式，先执行「角色档案 finalized 门控」
 
 **加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对；`completedEpisodes > 10` 时优先读 ledger + 目标集正文，不默认加载全部历史正文）, **characters.md**（存在则读；声音指纹#禁用清单或应激模式触发时，先查 continuity-ledger.md #角色动态状态：有触发事件记录 → 弧线兑现，标 `[骨架层确认]` 不阻断；无记录 → 标 `[骨架层修复]`，提示"若为刻意弧线节点请在 ledger 记录触发事件"；口吻漂移但未触及禁区/应激模式 → `[血肉层建议]` 不阻断）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, `dialogue-craft-cn.md`（中文对白 30% 删除 / 大声读 / 节奏扫描 / 潜台词补回）, `vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏；/自检 全量读取，用于工艺维度评分和 --fix 修复参考）, **国内模式额外加载：** `commercial-ledger-cn.md`（把买单理由缺失、付费承诺漂移、爽点未兑现、反派压力不升级归入商业生命力诊断）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
 
@@ -670,6 +748,8 @@ graph LR
 
 **独立可用：** 完成任意集数后均可调用，不需等全剧完成。
 
+**角色档案门控：** Step 1 和 Step 2 读取 `characters.md` 前执行「角色档案 finalized 门控」。
+
 **支持格式：** `/角色一致性` | `/角色一致性 1-20` | `/角色一致性 女主`
 
 **三层判断：** 读取 `three-layer-control.md`。年龄、身份、动机、关系状态矛盾归 `[地基层阻断]`；称呼关系、弧线和阶段状态漂移归 `[骨架层修复]`；口吻不鲜明、互动质感弱归 `[血肉层建议]`。
@@ -725,6 +805,8 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 - `/导出 {N}` → **单集导出**：仅导出第 N 集剧本正文 .docx，不含人物小传/梗概（见下方「单集导出」段）
 
 **前置条件：** 至少完成部分集数
+
+**角色档案门控：** 完整导出包含人物小传，读取 `characters.md` 前执行「角色档案 finalized 门控」。单集导出不读取人物小传时可跳过。
 
 **三层门控：** 读取 `three-layer-control.md`。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/compliance-risk.md`、`hard-rules.md`，确认目标市场、IP/相似性、真实人物/AI 肖像和 source inspiration 清单已检查。`/导出` 只因地基层 hard gate、格式/文件/docx 合法性失败、海外导出合规清单缺失，或已自检且不合格的集数阻断；血肉层低分或质感弱不单独阻断导出，只能作为导出前建议。
 
@@ -833,7 +915,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 - **导入模式**：用户直接粘贴已有角色视觉描述/prompt
 
 **启动流程：**
-1. 检查是否已有 `characters.md` → 有则提示生成/导入选择，无则提示粘贴
+1. 检查是否已有 `characters.md` → 有则先执行「角色档案 finalized 门控」，再提示生成/导入选择；无则提示粘贴
 2. 生成模式：逐角色提取外貌→生成 prompt 前缀→确认
 3. 导入模式：解析用户粘贴内容→补全缺失字段→确认
 

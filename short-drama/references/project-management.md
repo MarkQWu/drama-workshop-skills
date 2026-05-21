@@ -35,6 +35,7 @@ read_when: /开始, /新建, /分集, /自检, and any command that reads or wri
 ├── README.md                # 项目自述（/项目状态 生成/更新）
 ├── creative-plan.md          # 创作方案
 ├── characters.md             # 角色档案
+├── characters.parts/          # /角色开发 分批写入分片（按 runId 隔离，finalize 成功后合并到 characters.md）
 ├── setting-bible.md          # 考据 bible（/考据 生成，厚型题材必有）
 ├── research-cache/           # /考据 auto 检索原始缓存
 ├── episode-directory.md      # 分集目录
@@ -117,7 +118,7 @@ read_when: /开始, /新建, /分集, /自检, and any command that reads or wri
 
 **活跃项目锚定**：选中后 LLM 本会话所有产出走绝对路径 `~/short-drama-projects/<projectName>/`。不再读写 cwd。
 
-## /新建 stub state 模板（26 字段完整）
+## /新建 stub state 模板（27 字段完整）
 
 `/新建 <项目名>` 写入 `~/short-drama-projects/<项目名>/.drama-state.json`：
 
@@ -147,12 +148,74 @@ read_when: /开始, /新建, /分集, /自检, and any command that reads or wri
   "lastSynopsisEpisodeCount": 0,
   "lastSynopsisEpisodeHash": "",
   "lastSynopsisPath": "",
+  "characterDevStatus": {"status": "not_started"},
   "clashes": [],
   "roundtables": {}
 }
 ```
 
-**关键**：必须写 **26 字段全集** 而非仅 2 字段，否则下游 Step 5 存 state 时 overwrite 会丢字段。
+**关键**：必须写 **27 字段全集** 而非仅 2 字段，否则下游 Step 5 存 state 时 overwrite 会丢字段。
+
+### 字段说明：characterDevStatus（v1.39.0 新增）
+
+`characterDevStatus` 管理 `/角色开发` 分批写入状态机。新项目默认最小值：
+
+```json
+{"status": "not_started"}
+```
+
+完整结构在 `/角色开发` 首次执行时按 Read-Modify-Write 扩展：
+
+```json
+{
+  "characterDevStatus": {
+    "status": "not_started | in_progress | ready_to_finalize | finalized | rerun_in_progress | failed",
+    "runId": "chars-YYYYMMDD-HHMMSS",
+    "templateVersion": "v1",
+    "rolePlan": {
+      "frozen": true,
+      "source": "creative-plan.md + current project state",
+      "roles": [
+        {
+          "name": "角色名",
+          "tier": "core | long_arc | functional",
+          "batchId": "01-core",
+          "requiredFields": "full | minimal"
+        }
+      ]
+    },
+    "batches": [
+      {
+        "id": "01-core",
+        "roles": ["角色A", "角色B"],
+        "path": "characters.parts/chars-YYYYMMDD-HHMMSS/01-core.md",
+        "status": "pending | written | validated | failed",
+        "validatedAt": ""
+      }
+    ],
+    "currentBatchId": "01-core",
+    "completedRoles": [],
+    "pendingRoles": [],
+    "finalize": {
+      "path": "characters.parts/chars-YYYYMMDD-HHMMSS/90-finalize.md",
+      "status": "pending | written | validated | failed"
+    },
+    "finalCharactersPath": "characters.md",
+    "updatedAt": "YYYY-MM-DDTHH:mm:ss"
+  }
+}
+```
+
+**向后兼容**：
+- 无 `characterDevStatus` 且 `characters.md` 存在 → 兼容视为 `finalized`。
+- 无 `characterDevStatus` 且 `characters.md` 不存在 → 兼容视为 `not_started`。
+- `characterDevStatus.status != "finalized"` 时，下游命令不得静默读取旧 `characters.md`；除非用户逐字确认 `继续使用未完成角色档案`。
+
+**写入规则**：
+- `rolePlan` 首次生成后冻结，`/角色开发 继续` 不得重新推理角色清单。
+- `runId` 隔离每次重跑；`/角色开发 finalize` 只读取当前 runId 目录。
+- 分片文件写入后先标 `written`，通过脚本或逐项验收后才标 `validated`。
+- `characters.md` 只在 finalize 验收通过后生成或覆盖。
 
 ### 字段说明：clashes / roundtables（v1.25.0 新增）
 
@@ -285,6 +348,7 @@ json.dump({"currentStep": "创作方案", "genre": ["古装"]}, open(path, "w"))
 | `brainstorm.md` | 构思记录 |
 | `creative-plan.md` | 创作方案 |
 | `characters.md` | 角色档案 |
+| `characters.parts/` | /角色开发 分批写入分片 |
 | `setting-bible.md` | 考据 bible |
 | `episode-directory.md` | 分集目录 |
 | `continuity-ledger.md` | 连续性台账 |

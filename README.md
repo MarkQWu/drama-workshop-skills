@@ -1,6 +1,6 @@
 # 爆款剧本工坊 | Drama Workshop
 
-**当前版本：v1.38.7**（2026-05-21）· 版本历史见 [GitHub Releases](https://github.com/MarkQWu/drama-workshop-skills/releases) · 小白看 [使用说明](short-drama/使用说明.md)
+**当前版本：v1.39.0**（2026-05-21）· 版本历史见 [GitHub Releases](https://github.com/MarkQWu/drama-workshop-skills/releases) · 小白看 [使用说明](short-drama/使用说明.md)
 
 用 AI 写能拍的微短剧，也能拆解参考短剧做换皮复刻——从选题到分镜，一条命令链走完。
 
