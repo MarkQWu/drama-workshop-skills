@@ -23,3 +23,6 @@ __pycache__/
 # MCP 配置含本地 API Key，不进公开仓库（committed 版本是 placeholder，本地覆盖含真实 key）
 short-drama/.mcp.json
 short-drama-remake/.mcp.json
+# 兜底：所有 skill 子包目录下的 .mcp.json 一律不进仓
+# 用 */ 不用 **/，避免误伤未来仓根可能放的项目级 .mcp.json（Claude Code 标准位置）
+*/.mcp.json

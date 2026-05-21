@@ -1,3 +1,17 @@
+**v1.38.7**（2026-05-21）
+
+**重要修复（Windows 用户）**：install.ps1 写入 `mcp.json` 时，PowerShell 5.1 的 `-Encoding UTF8` 默认会在文件头加 UTF-8 BOM（`EF BB BF`），WorkBuddy / Claude Code 的 JSON 解析器不接受 BOM 会失败，最终用户感知为「网址错了 / 连不上 / 405 nginx / SSE 无效内容类型」。本版改用 .NET API 写入无 BOM 的 UTF-8，并兼容老版本已写入的 BOM 文件（读取时自动剥）。
+
+附带修复：
+- 老 BOM 文件自动修复：重跑安装时检测到旧版本写入的 BOM 头会强制重写剥离，**即使 key 未变也会刷新文件**（修复了 idempotent 跳过分支让老文件永远修不好的盲点）
+- Key 输入末尾自动剥 `\r` 与空白，粘贴时多带一个回车不再静默生成错 Key
+- 安装完成后显式输出写入文件路径 + MCP endpoint URL，方便用户对照官方后台
+- install.sh：同步加 Windows Git Bash 用户的 `\r` 防御
+
+老用户修复方法：重跑 `irm https://raw.githubusercontent.com/MarkQWu/drama-workshop-skills/main/install.ps1 | iex` 一次即可（原 key 自动保留，BOM 自动剥离）。
+
+---
+
 **v1.38.6**（2026-05-20）
 
 修复：/策划 的 MCP opt-in 从命令末尾移到「入口执行」位置（入口软提示之后、生成内容之前），模型现在会在开始 11 步之前先询问是否调用 MCP，不再跳过。

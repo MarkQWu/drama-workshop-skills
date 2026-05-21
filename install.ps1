@@ -19,11 +19,13 @@ function Get-WangwenKey {
     $wbConfig     = Join-Path $env:USERPROFILE ".workbuddy\mcp.json"
 
     # 读已有 key（先查 Claude Code，再查 WorkBuddy）
+    # 兼容 PS5.1 老版本写入的 UTF-8 BOM 文件：剥 BOM 后再 ConvertFrom-Json
     $existingKey = ""
     foreach ($f in @($claudeConfig, $wbConfig)) {
         if (Test-Path $f) {
             try {
-                $c = Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json
+                $raw = (Get-Content $f -Raw -Encoding UTF8).TrimStart([char]0xFEFF)
+                $c = $raw | ConvertFrom-Json
                 $k = $c.mcpServers.'wangwen-bigdata'.headers.'X-MCP-API-Key'
                 if ($k -and $k -ne "YOUR_KEY_HERE") { $existingKey = $k; break }
             } catch {}
@@ -37,7 +39,11 @@ function Get-WangwenKey {
         Write-Host "  [2] 换新 Key"
         $choice = Read-Host "  请选择 [1/2，默认 1]"
         if ($choice -eq "2") {
-            return Read-Host "  请粘贴新 Key（wwmcp_ 开头）"
+            $newKey = (Read-Host "  请粘贴新 Key（wwmcp_ 开头）").Trim()
+            if ($newKey -and $newKey -notmatch '^wwmcp_') {
+                Write-Host "  [警告] Key 不是 wwmcp_ 开头，请确认粘贴是否正确" -ForegroundColor Yellow
+            }
+            return $newKey
         }
         return $existingKey
     }
@@ -46,26 +52,49 @@ function Get-WangwenKey {
     Write-Host "  还没有 Key？免费注册（首次 1000 Credits，约够查 200 次榜单）："
     Write-Host "  https://wangwendashuju.com/mcp  →  注册后在「个人中心 → API Key」页面复制"
     Write-Host ""
-    return Read-Host "  请粘贴你的 Key（wwmcp_ 开头，没有可直接回车跳过）"
+    $newKey = (Read-Host "  请粘贴你的 Key（wwmcp_ 开头，没有可直接回车跳过）").Trim()
+    if ($newKey -and $newKey -notmatch '^wwmcp_') {
+        Write-Host "  [警告] Key 不是 wwmcp_ 开头，请确认粘贴是否正确" -ForegroundColor Yellow
+    }
+    return $newKey
 }
 
 function Write-McpConfig($configPath, $type, $key) {
     $backup = "$configPath.bak.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     if (Test-Path $configPath) { Copy-Item $configPath $backup }
 
+    # 检测文件是否带 UTF-8 BOM（老版本 install.ps1 用 Set-Content -Encoding UTF8 写入的遗留）
+    # → BOM 存在时即使 key 相同也必须强制重写一次（剥 BOM），否则老用户重跑安装永远修不好
+    $hasBom = $false
+    if (Test-Path $configPath) {
+        try {
+            $firstBytes = [System.IO.File]::ReadAllBytes($configPath)
+            if ($firstBytes.Length -ge 3 -and $firstBytes[0] -eq 0xEF -and $firstBytes[1] -eq 0xBB -and $firstBytes[2] -eq 0xBF) {
+                $hasBom = $true
+            }
+        } catch {}
+    }
+
     $c = if (Test-Path $configPath) {
-        try { Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { [PSCustomObject]@{} }
+        try {
+            # 兼容 PS5.1 老版本写入的 UTF-8 BOM 文件
+            $raw = (Get-Content $configPath -Raw -Encoding UTF8).TrimStart([char]0xFEFF)
+            $raw | ConvertFrom-Json
+        } catch { [PSCustomObject]@{} }
     } else { [PSCustomObject]@{} }
 
     if (-not $c.PSObject.Properties['mcpServers']) {
         $c | Add-Member -NotePropertyName mcpServers -NotePropertyValue ([PSCustomObject]@{})
     }
 
-    # idempotent：已有完全相同的 key 则跳过写入
+    # idempotent：已有完全相同的 key 且文件无 BOM 才跳过；文件带 BOM 必须强制重写剥 BOM
     $existingEntry = $c.mcpServers.PSObject.Properties['wangwen-bigdata']
     $existingEntryKey = if ($existingEntry) { $existingEntry.Value.headers.'X-MCP-API-Key' } else { $null }
-    if ($existingEntryKey -and $existingEntryKey -ne "YOUR_KEY_HERE" -and $existingEntryKey -eq $key) {
+    if (-not $hasBom -and $existingEntryKey -and $existingEntryKey -ne "YOUR_KEY_HERE" -and $existingEntryKey -eq $key) {
         return
+    }
+    if ($hasBom) {
+        Write-Host "  [修复] 检测到旧 BOM 编码，自动剥离重写（v1.38.7 hotfix）" -ForegroundColor DarkGray
     }
 
     $c.mcpServers | Add-Member -NotePropertyName 'wangwen-bigdata' -NotePropertyValue ([PSCustomObject]@{
@@ -75,8 +104,12 @@ function Write-McpConfig($configPath, $type, $key) {
     }) -Force
 
     $tmp = "$configPath.tmp"
-    # -Encoding UTF8 必须：PS5.1 默认输出 UTF-16 LE，会导致 Claude Code 解析失败
-    $c | ConvertTo-Json -Depth 10 | Set-Content -Path $tmp -Encoding UTF8
+    # 必须用 .NET API 无 BOM 写入：PS5.1 的 `-Encoding UTF8` 会写带 BOM 的 UTF-8（EF BB BF），
+    # WorkBuddy / Claude Code 的 Node.js JSON.parse 不接受 BOM，会抛 SyntaxError 导致整个
+    # MCP connector 加载失败，用户实际体感是「网址错了 / 连不上 / 405 nginx」。
+    # PS7+ 的 `-Encoding UTF8NoBOM` 也可，但 Windows 10 默认 PS5.1 不支持，统一用 .NET API 兜底。
+    $json = $c | ConvertTo-Json -Depth 10
+    [System.IO.File]::WriteAllText($tmp, $json, (New-Object System.Text.UTF8Encoding $false))
     Move-Item $tmp $configPath -Force
 }
 
@@ -108,20 +141,27 @@ function Invoke-McpSetup {
     $wbConfig     = Join-Path $env:USERPROFILE ".workbuddy\mcp.json"
     $configured   = $false
 
+    # 初始化空 JSON 文件时也必须无 BOM（理由同 Write-McpConfig 内的注释）
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+
     if (Test-Path (Join-Path $env:USERPROFILE ".claude")) {
-        if (-not (Test-Path $claudeConfig)) { '{}' | Set-Content -Path $claudeConfig -Encoding UTF8 }
+        if (-not (Test-Path $claudeConfig)) { [System.IO.File]::WriteAllText($claudeConfig, '{}', $utf8NoBom) }
         try {
             Write-McpConfig $claudeConfig "http" $key
             Write-Host "[OK]    Claude Code MCP 配置完成" -ForegroundColor Green
+            Write-Host "         → 写入文件: $claudeConfig" -ForegroundColor DarkGray
+            Write-Host "         → MCP endpoint: https://wwdsj-mcp.lingjingai.cn/mcp" -ForegroundColor DarkGray
             $configured = $true
         } catch { Write-Host "[错误]  Claude Code 配置失败：$_" -ForegroundColor Red }
     }
 
     if (Test-Path (Join-Path $env:USERPROFILE ".workbuddy")) {
-        if (-not (Test-Path $wbConfig)) { '{}' | Set-Content -Path $wbConfig -Encoding UTF8 }
+        if (-not (Test-Path $wbConfig)) { [System.IO.File]::WriteAllText($wbConfig, '{}', $utf8NoBom) }
         try {
             Write-McpConfig $wbConfig "streamableHttp" $key
             Write-Host "[OK]    WorkBuddy MCP 配置完成" -ForegroundColor Green
+            Write-Host "         → 写入文件: $wbConfig" -ForegroundColor DarkGray
+            Write-Host "         → MCP endpoint: https://wwdsj-mcp.lingjingai.cn/mcp" -ForegroundColor DarkGray
             $configured = $true
         } catch { Write-Host "[错误]  WorkBuddy 配置失败：$_" -ForegroundColor Red }
     }

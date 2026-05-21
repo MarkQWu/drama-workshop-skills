@@ -55,6 +55,8 @@ _prompt_key() {
     read -r -p "  请选择 [1/2，默认 1]：" choice </dev/tty 2>/dev/null || { warn "无交互终端，跳过 MCP 配置"; return 1; }
     if [[ "$choice" == "2" ]]; then
       read -r -p "  请粘贴新 Key（wwmcp_ 开头）：" WANGWEN_KEY </dev/tty 2>/dev/null || return 1
+      # 剥 Win 终端粘贴尾部 \r（Git Bash 在 Windows 上常见）
+      WANGWEN_KEY="${WANGWEN_KEY%$'\r'}"
     else
       WANGWEN_KEY="$existing"
       say "保留现有 Key"
@@ -66,7 +68,14 @@ _prompt_key() {
     echo ""
     local key_input
     read -r -p "  请粘贴你的 Key（wwmcp_ 开头，没有可直接回车跳过）：" key_input </dev/tty 2>/dev/null || { warn "无交互终端，跳过 MCP 配置"; return 1; }
+    # 剥 Win 终端粘贴尾部 \r
+    key_input="${key_input%$'\r'}"
     WANGWEN_KEY="$key_input"
+  fi
+
+  # Key 格式简单校验（Trim 后再检查）：警告不强阻塞，允许特殊场景
+  if [[ -n "$WANGWEN_KEY" && "$WANGWEN_KEY" != "$existing" && "$WANGWEN_KEY" != wwmcp_* ]]; then
+    warn "Key 不是 wwmcp_ 开头，请确认粘贴是否正确（继续写入）"
   fi
 
   if [[ -z "$WANGWEN_KEY" ]]; then
@@ -164,6 +173,8 @@ _setup_mcp() {
       [[ -f "$claude_settings" ]] || echo '{}' > "$claude_settings"
       if WANGWEN_KEY_SAFE="$WANGWEN_KEY" _write_mcp_config "$claude_settings" "http" "$WANGWEN_KEY"; then
         say "Claude Code MCP 配置完成"
+        hint "写入文件: $claude_settings"
+        hint "MCP endpoint: https://wwdsj-mcp.lingjingai.cn/mcp"
         configured=1
       fi
     fi
@@ -172,6 +183,8 @@ _setup_mcp() {
       [[ -f "$wb_config" ]] || echo '{}' > "$wb_config"
       if WANGWEN_KEY_SAFE="$WANGWEN_KEY" _write_mcp_config "$wb_config" "streamableHttp" "$WANGWEN_KEY"; then
         say "WorkBuddy MCP 配置完成"
+        hint "写入文件: $wb_config"
+        hint "MCP endpoint: https://wwdsj-mcp.lingjingai.cn/mcp"
         configured=1
       fi
     fi
