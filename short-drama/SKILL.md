@@ -351,13 +351,18 @@ graph LR
 
 **功能：** 生成完整角色体系。默认采用分批写入状态机，降低 WorkBuddy 长输出/写盘卡住风险；最终交付仍是旧模板兼容的 `characters.md`。
 
-**视角切换：** [人物] **人物设计师**——你不是在「帮用户写角色」，而是在设计一套能驱动 50-100 集冲突的人物引擎。每个角色必须有足够的内在矛盾和关系张力，不能因为是主角就完美无瑕。**欲望-恐惧对位要互相咬合**（角色最怕的通常是渴望的反面，如渴望认可 ↔ 怕被当废物），voice 样本集的台词必须**真能让该角色说出口**，覆盖不同场景/情绪（5 条不是 5 条同义重复）。三角张力聚焦**动态规律**，不重复 Mermaid 静态连线。
+**视角切换：** [人物] **人物设计师**——你不是在「帮用户写角色」，而是在设计一套能驱动 50-100 集冲突的人物引擎。每个角色必须有足够的内在矛盾和关系张力，不能因为是主角就完美无瑕。**欲望-恐惧对位要互相咬合**（角色最怕的通常是渴望的反面，如渴望认可 ↔ 怕被当废物），voice 样本集的台词必须**真能让该角色说出口**，覆盖不同场景/情绪（5 条不是 5 条同义重复）。voice 样本不是高光台词库：每个角色最多 1 条可偏宣言，其余必须是冲突现场里的普通反应句，不能让角色直接讲完整前史、核心动机或主题金句。三角张力聚焦**动态规律**，不重复 Mermaid 静态连线。
 
 **前置条件：** 已完成 /策划
 
 **支持格式：** `/角色开发` | `/角色开发 继续` | `/角色开发 finalize`
 
-**加载参考：** three-layer-control.md（人物核心与关系逻辑归地基层，角色功能归骨架层，voice 样本和口吻归血肉层）, constraint-design.md（约束有效性原则——生成 应激模式 / 声音指纹#禁用清单 等 B 类角色约束字段时，确保约束格式含触发情境 + 替代行为 + 豁免条件，不写纯禁止结构）, villain-design.md, dialogue-craft-cn.md（中文声音指纹：句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / 禁用句式）。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/dialogue-platform.md`、`dialogue-craft.md`、`dialogue-exemplar-risk.md`、`hard-rules.md`，先锁平台可读 voice 边界，再生成 voice 样本集。
+**加载参考：** three-layer-control.md（人物核心与关系逻辑归地基层，角色功能归骨架层，voice 样本和口吻归血肉层）, villain-design.md, dialogue-craft-cn.md（中文声音指纹：句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / 禁用句式）, dramatic-truth.md（Trailer-Speak / As-You-Know-Bob / Metaphor Overdose / Urgency Mismatch 四症状，生成 core 或 long_arc 角色 voice 前必须读）, constraint-design.md（B 类角色约束格式；生成 应激模式 / 声音指纹#禁用清单 时必须含触发情境 + 替代行为 + 豁免条件，不写纯禁止结构）。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/dialogue-platform.md`、`dialogue-craft.md`、`dialogue-exemplar-risk.md`、`hard-rules.md`，先锁平台可读 voice 边界，再生成 voice 样本集。
+
+**voice 生成前置门（强制）：**
+- 生成任何 `声音指纹 + voice 样本集` 前，先按 `dialogue-craft-cn.md#角色开发声音指纹` 执行：样本是短场景对白，不是角色小传、作者旁白或金句库。
+- 当前 batch 含 `core` 或 `long_arc` 角色时，先读 `dramatic-truth.md` 四症状清单；每条样本自查是否像对戏内对手说话，若像对观众解释背景，必须重写。
+- 生成 `禁用` 字段前，先按 `constraint-design.md#B 类约束标准格式` 写成 `触发情境 / 禁用误写 / 替代路径 / 豁免条件`，不得只写“不说 X”。
 
 **状态机协议（强制）：**
 
@@ -404,8 +409,9 @@ graph LR
      --file "{项目目录}/characters.parts/{runId}/{batchId}.md" \
      --roles "角色A,角色B"
    ```
-5. 验收通过：batch=`validated`，更新 `completedRoles/pendingRoles/currentBatchId/updatedAt`。
-6. 所有 batch 均 `validated`：置 `status=ready_to_finalize`，输出唯一下一步 `/角色开发 finalize`。
+5. 读取 validator JSON：`errors` 非空按失败处理；`warnings` 非空时仍可通过结构验收，但必须先尝试修正当前分片 voice 一次并复验。复验后若仍有 warnings，写入 `characters.parts/{runId}/validation-report.md`，并在对话框展示 `[声纹质量提醒]` 摘要，不得只报“完成”。
+6. 验收通过：batch=`validated`，更新 `completedRoles/pendingRoles/currentBatchId/updatedAt`。
+7. 所有 batch 均 `validated`：置 `status=ready_to_finalize`，输出唯一下一步 `/角色开发 finalize`。
 
 **`/角色开发 finalize` 行为：**
 
@@ -431,12 +437,13 @@ graph LR
      --run-consistency \
      --run-viz
    ```
-6. 验收通过后写 `status=finalized`、`finalize.status=validated`、`finalCharactersPath=characters.md`。
-7. 验收失败：**不得**写 `status=finalized`；若此前误写为 finalized，必须回滚为 `ready_to_finalize`；错误写入 `characters.parts/{runId}/validation-report.md`；输出唯一下一步 `/角色开发 finalize`。
+6. 读取 validator JSON：`errors` 非空按失败处理；`warnings` 非空时不阻断 finalized，但必须写入 `characters.parts/{runId}/validation-report.md` 并在对话框展示 `[声纹质量提醒]` 摘要，说明 voice 结构可用但口吻质量需人工或后续修正。
+7. 验收通过后写 `status=finalized`、`finalize.status=validated`、`finalCharactersPath=characters.md`。
+8. 验收失败：**不得**写 `status=finalized`；若此前误写为 finalized，必须回滚为 `ready_to_finalize`；错误写入 `characters.parts/{runId}/validation-report.md`；输出唯一下一步 `/角色开发 finalize`。
 
 **角色分片生成内容：**
 
-每个计划内角色必须包含完整角色块：姓名、年龄、外貌、性格、公开/真实身份、核心动机、**欲望-恐惧对位、动机形成契机**、盲点/弱点、冲突点、爽点功能、表面/真实功能、**声音指纹 + voice 样本集（句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / ≥5 条示例台词 + ≥3 条禁用模式）**、**应激模式**、视觉提示词。`functional` 角色也要有可被下游解析的最小完整字段，不降级成名单。
+每个计划内角色必须包含完整角色块：姓名、年龄、外貌、性格、公开/真实身份、核心动机、**欲望-恐惧对位、动机形成契机**、盲点/弱点、冲突点、爽点功能、表面/真实功能、**声音指纹 + voice 样本集（句长倾向 / 说话路径 / 躲闪方式 / 情绪失控语言 / ≥5 条示例台词 + ≥3 条禁用模式）**、**应激模式**、视觉提示词。`functional` 角色也要有可被下游解析的最小完整字段，不降级成名单。voice 样本必须是带对象、压力和真实意图的短场景对白，不写作者旁白、漂亮比喻、完整前史自白或主题宣言；情绪失控语言只写语言如何变形，不写摘眼镜、手在抖、整理卷宗、茶杯等动作/物件锚。
 
 **输出格式：** 见 `references/output-templates-core.md#角色开发`
 

@@ -50,6 +50,37 @@ FINAL_REQUIRED_SECTIONS = [
     "角色弧线",
 ]
 
+VOICE_ACTION_ANCHORS = [
+    "笔尖",
+    "摘眼镜",
+    "眼镜",
+    "整理",
+    "卷宗",
+    "文件",
+    "手套",
+    "茶杯",
+    "手在抖",
+    "微笑",
+    "红茶",
+    "滚水",
+]
+
+VOICE_EXPOSITION_PATTERNS = [
+    r"十一年前.*(我|卷宗|案子)",
+    r"当年.*(我|你|他|她)",
+    r"我不是你.*想象",
+    r"我沉默.*(时间|错|罪)",
+    r"你以为我.*(不知道|不想|没有)",
+    r"我为什么.*因为",
+    r"没有资格审判",
+    r"真相.*刀",
+    r"体面.*命",
+]
+
+VOICE_SAMPLE_CONTEXT_PATTERNS = [
+    r"对[^，:：]{1,20}[，,]?\s*在[^，:：]{1,40}(下|时)[，,]?\s*为了",
+    r"对[^，:：]{1,20}[，,]?\s*面对[^，:：]{1,40}[，,]?\s*为了",
+]
 
 
 def read_text(path: Path) -> str:
@@ -134,14 +165,114 @@ def validate_roles(content: str, roles: list[str], required_fields: list[str]) -
     return errors
 
 
+def extract_field_block(block: str, field: str) -> str:
+    pattern = field_pattern(field)
+    match = pattern.search(block)
+    if not match:
+        return ""
+    next_field = re.search(r"\n-\s+\*\*[^*\n]+?\*\*", block[match.end() :])
+    end = match.end() + next_field.start() if next_field else len(block)
+    return block[match.start() : end]
+
+
+def quoted_texts(text: str) -> list[str]:
+    return re.findall(r"[\"“](.+?)[\"”]", text)
+
+
+def visible_len(text: str) -> int:
+    return len(re.sub(r"\s+", "", text))
+
+
+def voice_sample_texts(voice: str) -> list[str]:
+    quoted = quoted_texts(voice)
+    if quoted:
+        return quoted
+
+    samples: list[str] = []
+    for line in voice.splitlines():
+        if not re.search(r"公开场合|私下|真实身份|情绪爆发", line):
+            continue
+        parts = re.split(r"[：:]", line, maxsplit=1)
+        if len(parts) == 2:
+            samples.append(parts[1].strip())
+    return samples
+
+
+def validate_voice_quality(content: str, roles: list[str]) -> list[str]:
+    warnings: list[str] = []
+    for role in roles:
+        block = extract_role_block(content, role)
+        if not block:
+            continue
+        voice = extract_field_block(block, "声音指纹 + voice 样本集")
+        if not voice:
+            continue
+
+        emotional_line = ""
+        for line in voice.splitlines():
+            if "情绪失控语言" in line:
+                emotional_line = line
+                break
+        for anchor in VOICE_ACTION_ANCHORS:
+            if anchor in emotional_line:
+                warnings.append(f"{role}: 情绪失控语言疑似混入动作/作者修辞锚点「{anchor}」")
+                break
+
+        samples = voice_sample_texts(voice)
+        for sample in samples:
+            if visible_len(sample) > 70:
+                warnings.append(f"{role}: voice 样本过长，疑似角色自白或设定说明: {sample[:30]}...")
+                break
+
+        if samples:
+            for pattern in VOICE_EXPOSITION_PATTERNS:
+                if any(re.search(pattern, sample) for sample in samples):
+                    warnings.append(f"{role}: voice 样本疑似直接讲前史/动机/主题宣言")
+                    break
+
+        sample_lines = [
+            line
+            for line in voice.splitlines()
+            if re.match(r"\s*-\s+(公开场合|真实身份\s*/\s*私下|私下场合|情绪爆发)", line)
+        ]
+        if sample_lines and not all(
+            any(re.search(pattern, line) for pattern in VOICE_SAMPLE_CONTEXT_PATTERNS)
+            for line in sample_lines
+        ):
+            warnings.append(f"{role}: voice 样本未显式标注对象/压力/真实意图，后续分集可执行性偏弱")
+
+        if "禁用" in voice and not re.search(r"触发情境|替代路径|豁免条件", voice):
+            warnings.append(f"{role}: 禁用项仍是纯禁止结构，建议改为 触发情境/禁用误写/替代路径/豁免条件")
+    return warnings
+
+
+def warning_summary(warnings: list[str], limit: int = 8) -> str:
+    if not warnings:
+        return ""
+    shown = warnings[:limit]
+    text = "\n".join(f"- {item}" for item in shown)
+    if len(warnings) > limit:
+        text += f"\n- ... 另有 {len(warnings) - limit} 条"
+    return "[声纹质量提醒]\n" + text
+
+
 def validate_batch(args: argparse.Namespace) -> dict:
     content = read_text(Path(args.file))
     roles = load_roles(args)
     errors: list[str] = []
+    warnings: list[str] = []
     if not roles:
         errors.append("未提供 roles；用 --roles A,B 或 --role-plan path")
     errors.extend(validate_roles(content, roles, BATCH_REQUIRED_FIELDS))
-    return {"mode": "batch", "ok": not errors, "errors": errors, "roles": roles}
+    warnings.extend(validate_voice_quality(content, roles))
+    return {
+        "mode": "batch",
+        "ok": not errors,
+        "errors": errors,
+        "warnings": warnings,
+        "warningSummary": warning_summary(warnings),
+        "roles": roles,
+    }
 
 
 def has_strong_villain(content: str) -> bool:
@@ -177,6 +308,8 @@ def validate_final(args: argparse.Namespace) -> dict:
         errors.append("强反派题材缺关键 section: ## 反派体系")
 
     errors.extend(validate_roles(content, roles, ROLE_REQUIRED_FIELDS))
+    warnings.extend(validate_voice_quality(content, roles))
+
     project_dir = Path(args.project_dir).resolve() if args.project_dir else path.parent.resolve()
     skill_dir = Path(__file__).resolve().parents[1]
 
@@ -219,6 +352,7 @@ def validate_final(args: argparse.Namespace) -> dict:
         "ok": not errors,
         "errors": errors,
         "warnings": warnings,
+        "warningSummary": warning_summary(warnings),
         "roles": roles,
     }
 
