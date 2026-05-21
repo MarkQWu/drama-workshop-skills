@@ -10,6 +10,7 @@ import sys
 import tempfile
 import os
 from pathlib import Path
+from zipfile import ZipFile
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 EXPORT_SCRIPT = SCRIPT_DIR / "export_docx.py"
@@ -39,6 +40,34 @@ def docx_to_text(docx_path):
     return result.stdout
 
 
+W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+def first_paragraph_props(docx_path):
+    """读取首段核心 OOXML 属性，用于验证参考稿式版式。"""
+    from lxml import etree
+
+    with ZipFile(docx_path) as z:
+        xml = etree.fromstring(z.read("word/document.xml"))
+    p = xml.find(f".//{W_NS}p")
+    ppr = p.find(f"{W_NS}pPr")
+    r = p.find(f"{W_NS}r")
+    rpr = r.find(f"{W_NS}rPr") if r is not None else None
+    spacing = ppr.find(f"{W_NS}spacing") if ppr is not None else None
+    jc = ppr.find(f"{W_NS}jc") if ppr is not None else None
+    sz = rpr.find(f"{W_NS}sz") if rpr is not None else None
+    fonts = rpr.find(f"{W_NS}rFonts") if rpr is not None else None
+    return {
+        "jc": jc.get(f"{W_NS}val") if jc is not None else None,
+        "sz": sz.get(f"{W_NS}val") if sz is not None else None,
+        "eastAsia": fonts.get(f"{W_NS}eastAsia") if fonts is not None else None,
+        "bold": rpr.find(f"{W_NS}b") is not None if rpr is not None else False,
+        "before": spacing.get(f"{W_NS}before") if spacing is not None else None,
+        "after": spacing.get(f"{W_NS}after") if spacing is not None else None,
+        "line": spacing.get(f"{W_NS}line") if spacing is not None else None,
+    }
+
+
 def assert_true(condition, test_name, detail=""):
     global passed, failed, errors
     if condition:
@@ -56,14 +85,13 @@ def assert_true(condition, test_name, detail=""):
 # =============================================================
 
 def test_normal_export_with_template():
-    """正常导出：第三参数（旧 reference-doc）被静默忽略，仍正常生成 docx"""
+    """正常导出：第三参数（旧 reference-doc）保留兼容，仍正常生成 docx"""
     print("\n[TEST] 正常导出（有模板）")
     with tempfile.TemporaryDirectory() as tmp:
         md = Path(tmp) / "test.md"
         docx = Path(tmp) / "test.docx"
         md.write_text("# 测试剧本\n\n第一行内容", encoding="utf-8")
 
-        # v1.38.0 起不再使用 reference-doc，第三参数静默忽略
         code, out, err = run_export(md, docx, ref_doc=REF_DOC)
         assert_true(code == 0, "exit code 为 0", f"实际: {code}")
         assert_true(docx.exists(), "docx 文件已生成")
@@ -213,6 +241,143 @@ def test_industry_markers_preserved():
         assert_true("[音乐]" in text, "[音乐] 标记保留")
 
 
+def test_reference_like_word_layout():
+    """参考稿式版式：首段不是大号居中标题，使用宋体 12pt 加粗、1.5 倍行距"""
+    print("\n[TEST] 参考稿式 Word 版式")
+    with tempfile.TemporaryDirectory() as tmp:
+        md = Path(tmp) / "layout.md"
+        docx = Path(tmp) / "layout.docx"
+        md.write_text("# 第1集：测试\n\n△ 第一段内容。", encoding="utf-8")
+
+        code, out, err = run_export(md, docx)
+        assert_true(code == 0, "exit code 为 0", f"实际: {code}")
+        props = first_paragraph_props(docx)
+        assert_true(props["jc"] is None, "首段不居中")
+        assert_true(props["sz"] == "24", "首段为 12pt", f"实际: {props['sz']}")
+        assert_true(props["eastAsia"] == "宋体", "中文字体为宋体", f"实际: {props['eastAsia']}")
+        assert_true(props["bold"], "首段加粗")
+        assert_true(props["line"] == "360", "1.5 倍行距", f"实际: {props['line']}")
+        assert_true(props["before"] == "240", "段前 12pt", f"实际: {props['before']}")
+        assert_true(props["after"] == "240", "段后 12pt", f"实际: {props['after']}")
+
+
+def test_markdown_cleanup_and_reference_sections():
+    """Markdown 残留清理：不把创作骨架、反引号、代码围栏、章节编号写进 Word"""
+    print("\n[TEST] Markdown 清理与参考稿章节名")
+    with tempfile.TemporaryDirectory() as tmp:
+        md = Path(tmp) / "cleanup.md"
+        docx = Path(tmp) / "cleanup.docx"
+        md.write_text("""\
+# 测试剧
+
+## 一、故事梗概
+
+女主重生后开始复仇。
+
+## 二、人物小传
+
+### 宋以安
+
+宋以安：表面温和，实际冷静。
+
+## 三、正文
+
+# 第1集：重生第一天
+
+**分集定位：** 内部说明，不应进入 Word
+
+**本集骨架：**
+
+- story job：内部骨架，不应进入 Word
+
+---
+
+`1-1 夜/内 废弃仓库`
+
+```
+苏晴
+陆承
+```
+""", encoding="utf-8")
+
+        code, out, err = run_export(md, docx)
+        assert_true(code == 0, "exit code 为 0", f"实际: {code}")
+        text = docx_to_text(docx)
+        assert_true("剧情介绍：女主重生后开始复仇。" in text, "故事梗概映射为剧情介绍")
+        assert_true("人物介绍" in text, "人物小传映射为人物介绍")
+        assert_true("一、故事梗概" not in text, "旧章节编号不输出")
+        assert_true("分集定位" not in text, "内部分集定位不输出")
+        assert_true("story job" not in text, "内部骨架不输出")
+        assert_true("`" not in text, "反引号不输出")
+        assert_true("```" not in text, "代码围栏不输出")
+        assert_true("1-1 夜/内 废弃仓库" in text, "场景标题内容保留")
+
+
+def test_multi_episode_export_body():
+    """多集范围导出：合并后的多集正文按参考稿式标题输出，且每集内部骨架被清理"""
+    print("\n[TEST] 多集范围导出正文")
+    with tempfile.TemporaryDirectory() as tmp:
+        md = Path(tmp) / "range.md"
+        docx = Path(tmp) / "range.docx"
+        md.write_text("""\
+# 第1集：开局
+
+**分集定位：** 内部说明，不应进入 Word
+
+**本集骨架：**
+
+- story job：内部骨架，不应进入 Word
+
+---
+
+△ 第一集正文。
+
+# 第2集：反击
+
+△ 第二集正文。
+
+# 第10集：卡点
+
+△ 第十集正文。
+""", encoding="utf-8")
+
+        code, out, err = run_export(md, docx)
+        assert_true(code == 0, "exit code 为 0", f"实际: {code}")
+        text = docx_to_text(docx)
+        assert_true("第一集：开局" in text, "第 1 集标题中文化")
+        assert_true("第二集：反击" in text, "第 2 集标题中文化")
+        assert_true("第十集：卡点" in text, "第 10 集标题中文化")
+        assert_true("第一集正文" in text and "第二集正文" in text and "第十集正文" in text,
+                    "多集正文均保留")
+        assert_true("分集定位" not in text, "范围导出清理分集定位")
+        assert_true("story job" not in text, "范围导出清理内部骨架")
+
+
+def test_front_matter_without_separator_keeps_body():
+    """内部骨架后缺少 --- 时，不能把正文整段吞掉"""
+    print("\n[TEST] 无分隔线骨架剥离不吞正文")
+    with tempfile.TemporaryDirectory() as tmp:
+        md = Path(tmp) / "no-separator.md"
+        docx = Path(tmp) / "no-separator.docx"
+        md.write_text("""\
+# 第1集：无分隔线
+
+**分集定位：** 内部说明，不应进入 Word
+
+**本集骨架：**
+
+- story job：内部骨架，不应进入 Word
+
+△ 第一集正文。
+""", encoding="utf-8")
+
+        code, out, err = run_export(md, docx)
+        assert_true(code == 0, "exit code 为 0", f"实际: {code}")
+        text = docx_to_text(docx)
+        assert_true("第一集正文" in text, "正文保留")
+        assert_true("story job" not in text, "内部骨架不输出")
+
+
 def test_export_template_structure():
     """导出模板三段式结构：故事梗概+人物小传+正文在 docx 中正确呈现"""
     print("\n[TEST] 导出模板三段式结构")
@@ -291,8 +456,8 @@ def test_export_template_structure():
         assert_true("外冷内热" in text, "角色性格字段存在")
         assert_true("九天玄女" in text, "林雨欣身份与关系段存在")
         assert_true("守护者" in text, "林邵阳身份与关系段存在")
-        assert_true("第1集" in text, "第1集存在")
-        assert_true("第2集" in text, "第2集存在")
+        assert_true("第一集" in text, "第一集存在")
+        assert_true("第二集" in text, "第二集存在")
 
         # 验证顺序：故事梗概 → 人物小传 → 正文
         idx_synopsis = text.find("九天玄女")
@@ -335,6 +500,10 @@ if __name__ == "__main__":
         test_empty_file,
         test_large_file_50_episodes,
         test_industry_markers_preserved,
+        test_reference_like_word_layout,
+        test_markdown_cleanup_and_reference_sections,
+        test_multi_episode_export_body,
+        test_front_matter_without_separator_keeps_body,
         test_export_template_structure,
         test_output_dir_auto_create,
     ]

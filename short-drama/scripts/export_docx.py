@@ -5,11 +5,11 @@
 
 功能:
   1. 检测 python-docx / lxml 是否安装，缺失时自动通过 pip 安装
-  2. 逐行解析剧本 Markdown（# / ## / ### / △ / 对白 / 括号 / 分隔线）
+  2. 逐行解析剧本 Markdown，清理 Markdown 标记与内部创作骨架
   3. 用 python-docx 直接生成 .docx，精确控制中文字体（w:eastAsia）和间距
-  4. 参照专业剧本排版：宋体/黑体 12pt，全文加粗，1.5倍行距
+  4. 参照《女相师》类行业交付稿：A4、宋体 12pt、全文加粗、1.5倍行距
 
-注意: 第三个位置参数（reference-doc 路径）已不再使用，保留接口兼容性。
+注意: 第三个位置参数（reference-doc 路径）保留接口兼容性；当前内置行业交付稿版式。
 """
 
 import re
@@ -89,29 +89,29 @@ def _set_east_asia(rpr_elem, font_cn: str):
 
 
 def init_document():
-    """创建文档，设置 A4 页面 + 全局 Normal 样式"""
+    """创建文档，设置 A4 页面 + 《女相师》类行业交付稿样式"""
     from docx import Document
-    from docx.shared import Pt, Cm
+    from docx.shared import Pt, Cm, Inches
 
     doc = Document()
 
-    # A4 页面，标准页边距
+    # A4 页面；左右 1.25 inch、上下 1 inch，与参考稿的正文宽度一致。
     sec = doc.sections[0]
     sec.page_width  = Cm(21.0)
     sec.page_height = Cm(29.7)
-    sec.top_margin    = Cm(2.54)
-    sec.bottom_margin = Cm(2.54)
-    sec.left_margin   = Cm(3.17)
-    sec.right_margin  = Cm(3.17)
+    sec.top_margin    = Inches(1)
+    sec.bottom_margin = Inches(1)
+    sec.left_margin   = Inches(1.25)
+    sec.right_margin  = Inches(1.25)
 
-    # Normal 基础样式：宋体 12pt 加粗，1.5倍行距，6pt 段后间距
+    # Normal 基础样式：宋体 12pt 加粗，1.5倍行距，参考稿式段距。
     normal = doc.styles["Normal"]
     normal.font.size  = Pt(12)
     normal.font.bold  = True
-    normal.font.name  = "Times New Roman"   # 英文/Latin 字体
+    normal.font.name  = "宋体"
     normal.paragraph_format.line_spacing  = 1.5
-    normal.paragraph_format.space_before  = Pt(0)
-    normal.paragraph_format.space_after   = Pt(6)
+    normal.paragraph_format.space_before  = Pt(12)
+    normal.paragraph_format.space_after   = Pt(12)
     _set_east_asia(normal.element.get_or_add_rPr(), "宋体")
 
     return doc
@@ -141,8 +141,8 @@ def _make_run(para, text: str, bold: bool = True, size_pt: int = 12,
 
 def _add_para(doc, text: str, *,
               bold: bool = True, size_pt: int = 12,
-              font_en: str = "Times New Roman", font_cn: str = "宋体",
-              space_before: float = 0, space_after: float = 6,
+              font_en: str = "宋体", font_cn: str = "宋体",
+              space_before: float = 12, space_after: float = 12,
               alignment=None):
     """
     添加段落，自动解析内联 **粗体** 标记。
@@ -153,6 +153,7 @@ def _add_para(doc, text: str, *,
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(space_before)
     p.paragraph_format.space_after  = Pt(space_after)
+    p.paragraph_format.line_spacing = 1.5
     if alignment is not None:
         p.paragraph_format.alignment = alignment
 
@@ -193,7 +194,7 @@ def _add_hr(doc):
 
 # ─────────────────────── 行分类 ───────────────────────
 
-# 优先级从高到低匹配
+# 优先级从高到低匹配。导出 Word 不再使用大号标题层级，分类只用于清理内容。
 _KIND_RULES = [
     (re.compile(r"^# (?!#)"),    "h1"),         # 剧本标题
     (re.compile(r"^### "),       "h3"),          # 集标题
@@ -206,6 +207,123 @@ _KIND_RULES = [
     (re.compile(r"^（"),          "cue"),         # （BGM / 字幕 / 音效）
     (re.compile(r"^【"),          "cue"),         # 【闪回】【闪出】
 ]
+
+_SECTION_TITLE_MAP = {
+    "一、故事梗概": ("prefix", "剧情介绍："),
+    "故事梗概": ("prefix", "剧情介绍："),
+    "剧情介绍": ("prefix", "剧情介绍："),
+    "二、剧情脉络": ("heading", "剧情脉络："),
+    "剧情脉络": ("heading", "剧情脉络："),
+    "二、人物小传": ("heading", "人物介绍"),
+    "人物小传": ("heading", "人物介绍"),
+    "人物介绍": ("heading", "人物介绍"),
+    "三、人物小传": ("heading", "人物介绍"),
+    "三、正文": ("skip", ""),
+    "正文": ("skip", ""),
+    "四、正文": ("skip", ""),
+}
+
+_FRONT_MATTER_LABELS = (
+    "分集定位",
+    "本集骨架",
+)
+
+_BODY_START_RE = re.compile(
+    r"^(?:△|【|（|#{1,3}\s+|\d+\s*[-－]\s*\d+|第[一二三四五六七八九十\d]+\s*场|"
+    r"\*\*[^*：:]{1,20}\*\*(?:（[^）]+）)?[：:])"
+)
+
+
+def _strip_inline_markdown(text: str) -> str:
+    """清理会直接露在 Word 里的轻量 Markdown 标记。"""
+    s = text.strip()
+    if s.startswith(">"):
+        s = re.sub(r"^>\s*", "", s)
+    s = re.sub(r"^[-*+]\s+", "", s)
+    s = re.sub(r"^#+\s*", "", s)
+    s = re.sub(r"`([^`]+)`", r"\1", s)
+    s = s.replace("**", "")
+    return s.strip()
+
+
+def _normalize_episode_title(text: str) -> str:
+    """把“第1集”统一成参考稿更常见的中文数字标题。"""
+    digits = "零一二三四五六七八九"
+
+    def convert_under_100(num: int) -> str:
+        if num < 10:
+            return digits[num]
+        if num == 10:
+            return "十"
+        if num < 20:
+            return "十" + digits[num % 10]
+        tens, ones = divmod(num, 10)
+        return digits[tens] + "十" + (digits[ones] if ones else "")
+
+    def repl(match):
+        return f"第{convert_under_100(int(match.group(1)))}集"
+
+    return re.sub(r"第\s*(\d{1,2})\s*集", repl, text)
+
+
+def _iter_export_lines(md_text: str):
+    """
+    输出适合 Word 交付稿的行。
+
+    - 去掉 fenced code 标记，只保留代码块内容。
+    - 单集导出的开头创作骨架（分集定位 / 本集骨架）默认剥离，避免内部工作笔记进交付稿。
+    - 将完整导出的章节名映射为《女相师》类命名。
+    """
+    in_code = False
+    skipping_front_matter = False
+    pending_prefix = ""
+
+    for raw in md_text.splitlines():
+        s = raw.strip()
+
+        if s.startswith("```"):
+            in_code = not in_code
+            continue
+
+        if not s:
+            skipping_front_matter = False if not skipping_front_matter else skipping_front_matter
+            yield ""
+            continue
+
+        cleaned = _strip_inline_markdown(s)
+        if not cleaned:
+            continue
+
+        label = cleaned.rstrip("：:")
+        if any(label.startswith(item) for item in _FRONT_MATTER_LABELS):
+            skipping_front_matter = True
+            continue
+        if skipping_front_matter:
+            if s == "---":
+                skipping_front_matter = False
+                continue
+            if _BODY_START_RE.match(s):
+                skipping_front_matter = False
+            elif s.startswith(("-", "+")) or re.match(r"^\*\s+", s):
+                continue
+            else:
+                skipping_front_matter = False
+
+        if not in_code:
+            section = _SECTION_TITLE_MAP.get(label)
+            if section:
+                mode, value = section
+                if mode == "prefix":
+                    pending_prefix = value
+                elif mode == "heading":
+                    yield value
+                continue
+
+        cleaned = _normalize_episode_title(cleaned)
+        if pending_prefix:
+            cleaned = pending_prefix + cleaned
+            pending_prefix = ""
+        yield cleaned
 
 
 def classify(line: str):
@@ -228,67 +346,24 @@ def classify(line: str):
 # ─────────────────────── 主转换 ───────────────────────
 
 def convert(md_text: str, output_path: str) -> bool:
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-
     doc = init_document()
 
-    for line in md_text.splitlines():
+    for line in _iter_export_lines(md_text):
         kind, content = classify(line)
 
         if kind == "blank":
-            # 间距完全由段落 space_before / space_after 控制，不插入空段落
             continue
 
         elif kind == "hr":
-            _add_hr(doc)
-
-        elif kind == "h1":
-            # 剧本总标题：黑体 22pt，居中
-            _add_para(doc, content,
-                      size_pt=22, font_cn="黑体", font_en="Arial",
-                      space_before=0, space_after=12,
-                      alignment=WD_ALIGN_PARAGRAPH.CENTER)
-
-        elif kind == "h3":
-            # 集标题（### 第N集：...）：黑体 16pt
-            _add_para(doc, content,
-                      size_pt=16, font_cn="黑体", font_en="Arial",
-                      space_before=24, space_after=8)
-
-        elif kind == "h2":
-            # 场景标题（## N-M · 地点 · 日夜）：黑体 14pt
-            _add_para(doc, content,
-                      size_pt=14, font_cn="黑体", font_en="Arial",
-                      space_before=18, space_after=6)
-
-        elif kind == "action":
-            # △ 动作/场景描写：宋体 12pt 加粗
-            _add_para(doc, content,
-                      space_before=0, space_after=5)
-
-        elif kind == "dialogue":
-            # 对白：**角色名**（括号）台词，内联粗体解析
-            _add_para(doc, content,
-                      space_before=0, space_after=4)
-
-        elif kind == "cue":
-            # 场景指示：（BGM）/ 【闪回】等
-            _add_para(doc, content,
-                      space_before=0, space_after=4)
-
-        elif kind == "blockquote":
-            # > 前情提要 / 本集关键词 等注释行：斜体 10pt，灰色（不加粗）
-            _add_para(doc, content,
-                      bold=False, size_pt=10,
-                      space_before=0, space_after=3)
+            # 参考稿不使用横线分隔。空白由上下段距承担。
+            continue
 
         elif kind == "comment":
             # <!-- ... --> HTML 注释：直接跳过，不写入 Word
             continue
 
-        else:  # body
-            _add_para(doc, content,
-                      space_before=0, space_after=6)
+        else:
+            _add_para(doc, content, space_before=12, space_after=12)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     doc.save(output_path)

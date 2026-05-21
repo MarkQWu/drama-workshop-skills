@@ -515,7 +515,37 @@ graph LR
 
 **前置条件：** 已完成 /分集目录；读取 `characters.md` 前执行「角色档案 finalized 门控」
 
-**加载参考：** three-layer-control.md（锁本集 story job / entry pressure / turning point / exit hook，释放具体台词、动作和场面质感）, continuity-protocol.md（跨集剧情记忆、ledger 读写、尾钩义务承接）, opening-rules.md（**仅第 1 集 Read**，其他集跳过）, rhythm-curve.md, satisfaction-matrix.md, hook-design.md, quality-rules.md（跨介质通用规则 + 自检维度）, creative-intent-ledger.md（用于防止分集背离原始前提、核心关系和不可牺牲点）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, **setting-bible.md**（如存在，强制引用专业细节）, **used-lines.md**（存在则读，跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）, **continuity-ledger.md**（存在则读；不存在按 `continuity-protocol.md` 创建或 bootstrap）, **characters.md**（存在则读；只读 声音指纹#禁用清单 和 应激模式 两个字段——生成本集时按应激模式路径写对应角色行为，避免触发禁用清单词）, **对白工艺（默认加载）：** `dialogue-craft-cn.md`（中文对白三问：像这个人 / 有潜台词 / 可动作替代）, **工艺深化（条件加载，v1.32.0）：** 以下文件仅在满足对应条件时 Read，首次生成新集不加载——① `vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏）：**仅当** `episodes/ep{NNN}.md` 已存在（重写/精修场景）**或**用户使用 `--refine` 标志 **或** 上一轮 `/自检` 有工艺类问题待修时读取；② `dramatic-truth.md`（对白真实性 4 症状）：**仅当** `episodes/ep{NNN}.md` 已存在（重写场景，已有对白需诊断）时读取，首次生成不读；③ `script-element-extraction.md`（5 类元素分层 pipeline）：**从 /分集 移除，仅 /分镜 时读取**——/分集 生成剧本正文不需要元素分层管线, **国内模式额外加载：** `commercial-ledger-cn.md`（核对本集买单理由、付费/尾钩压力、爽点兑现状态、反派压力变化）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
+**加载参考：**
+
+**A. 基础加载（永远读）**：
+- `three-layer-control.md` — 锁本集 story job / entry pressure / turning point / exit hook
+- `dialogue-craft-cn.md` — 对白三问 + 对白下限
+
+**B. medium 分叉（按 `.drama-state.json#medium` 选 1）**：
+- `medium="ai_live"`（默认/缺失）→ Read `ai-live-rules.md`
+- `medium="comic"` → Read `comic-rules.md`
+
+**C. mode 分叉（按 `.drama-state.json#mode` 选 1）**：
+- `mode="domestic"`（默认）→ Read `commercial-ledger-cn.md`
+- `mode="overseas"` → Read `references/overseas/` 分层资料（详见 /出海 命令完整清单），不读国内商业账本
+
+**D. 条件加载（按条件 if 触发）**：
+- `opening-rules.md` — **仅 N=1 时 Read**（第 1 集首集硬合同），N≥2 跳过
+- `continuity-protocol.md` — **仅 N>1 时 Read**（跨集剧情记忆）
+- `hook-design.md` — **仅写集末钩子时 Read 核心 30 行**（事件钩定义段）
+- `setting-bible.md` — **存在则读**（专业细节强制引用）
+- `used-lines.md` — **存在则读**（跨集台词去重；加载/写入协议见 `used-lines-protocol.md`）
+- `continuity-ledger.md` — **存在则读**；不存在按 `continuity-protocol.md` 创建或 bootstrap
+- `characters.md` — **存在则读**；只读「声音指纹#禁用清单」+「应激模式」两个字段
+- `creative-intent-ledger.md` — **仅当 creative-plan.md 缺失 intent 字段时 Read**（防分集背离原始前提）
+- `vertical-drama-craft.md` — **仅 `episodes/ep{NNN}.md` 已存在（重写/精修）或 `--refine` 标志或上一轮 /自检 有工艺类问题时 Read**
+- `dramatic-truth.md` — **仅 `episodes/ep{NNN}.md` 已存在（重写）时 Read**
+- `script-element-extraction.md` — **从 /分集 移除，仅 /分镜 时 Read**（/分集 生成剧本正文不需要元素分层管线）
+
+**E. 输出格式指针（按 medium 路由 anchor，section read）**：
+- `medium="ai_live"` → `references/output-templates-core.md#分集国内模式`
+- `medium="comic"` → `references/output-templates-core.md#分集国内模式-comic`
+- `mode="overseas"` → `references/output-templates-core.md#分集出海模式`
 
 **anchor inline + `--fix anchor-rhythm` 子命令：** 如 `creative-plan.md` 有 `anchor` 字段，按 `references/anchor-trigger.md#分集-anchor-inline` 把 anchor prompt 模板 inline 到分集生成 prompt；无 `anchor` 字段则跳过。节奏污染时 `/分集 N --fix anchor-rhythm` 重写（详见 `references/anchor-trigger.md#fix-anchor-rhythm-子命令`）。
 
@@ -523,15 +553,15 @@ graph LR
 
 **破折号禁用（硬约束，生成时实时执行）：** 剧本正文不出现破折号。禁止 `——`、`—`、`--`，包括台词停顿、被打断、场景补充说明、心理独白引出。需要停顿或打断时，用动作描写、换对话轮次、完整句、句号、逗号或中文省略号「…」替代。不把它留给 /自检 再返工。双层防线：生成层禁用 + 自检层出现即标【严重】。
 
-**画面可拍性实时节制（生成时分层提醒，v1.15.6 新增）：** 写 △ 段落时问自己：**摄影机能拍到这句吗？** **OS/VO 层允许诗意比喻**（anchor 红利承载位，想象力想往哪飞就往哪飞），**△ 场景叙事层必须可拍**（物件 / 动作 / 环境 / 表情）。分层边界见 `references/quality-rules.md#反抽象-画面可拍性规则-轻约束`。双层防线：生成层此约束（抽象原则，不列触发词）+ 自检层事后扣分（见 `/自检` 维度 6 及 A/B/C 类判定）。
+**画面可拍性实时节制（生成时分层提醒，v1.15.6 新增）：** 写 △ 段落时问自己：**摄影机能拍到这句吗？** **OS/VO 层允许诗意比喻**（anchor 红利承载位，想象力想往哪飞就往哪飞），**△ 场景叙事层必须可拍**（物件 / 动作 / 环境 / 表情）。生成阶段只执行本句内联原则，不额外读取 `quality-rules.md`；详细扣分留给 `/自检`。
 
-**专业细节引用规则（bible 存在时强制）：** 详见 `references/quality-rules.md#考据可追溯性自检流程`。核心原则：所有专业术语/官名/制度/数字/药物剂量/法条必须映射到 bible，否则改模糊或标 `[虚构]`。
+**专业细节引用规则（bible 存在时强制，生成阶段内联）：** 所有专业术语/官名/制度/数字/药物剂量/法条必须映射到 bible，否则改模糊或标 `[虚构]`；不额外读取 `quality-rules.md`，考据追溯评分留给 `/自检`。
 
 **三层生成边界：** 生成时硬控地基层和骨架层，不把血肉层的具体台词、微动作、比喻数量、句式节奏写成固定模板。若血肉选择无法完成本集 `locked_episode_job`，先修骨架执行；若只是风格强弱，留给 `/自检` 或 `/圆桌诊断` 做建议。
 
 **商业账本对账（国内模式）：** 生成前读取 `creative-plan.md#商业账本` 和 `episode-directory.md` 的目录版商业职责；本集写完后在集末自查补齐本集买单理由、付费/尾钩压力、爽点兑现状态、反派压力变化。缺失时先补结构职责，不用空泛口号代替。
 
-**对白三问（生成时不输出过程）：** 每句关键对白生成前按 `dialogue-craft-cn.md` 过三问：① 是否只有这个角色会这么说；② 表面意思和真实意图是否不同；③ 能否用动作、道具、沉默替代。能替代就删对白，改成动作或沉默；不能删时再写成角色声音指纹内的句子。
+**对白下限 + 三问（生成时不输出过程）：** 写每场对白前**先按 `dialogue-craft-cn.md#对白合理性下限` 情境驱动准则确保本场对白下限达标**（≥2 角色同框有戏剧动态、关键剧情节点、独角戏外部触发等场景必须有对白），再用对白三问优化已写对白的质量：① 是否只有这个角色会这么说；② 表面意思和真实意图是否不同；③ 对白和动作哪个更刺。三问是优化工具，不是用来削减对白到下限以下。
 
 **支持格式：** `/分集 1` | `/分集 5-8` | `/分集 next`
 
@@ -549,9 +579,9 @@ graph LR
   4. **主角痛点**：主角被什么具体的人/事/物压制（具象不抽象）
   5. **压迫者动作**：压迫者用哪个具体动作建立力量优势
   6. **信息差**：观众知道什么主角不知道？或主角知道什么旁人不知道？（首集至少 1 个）
-  7. **完整爽点弧（4 节点）**：痛点 → 蓄力 → 小释放 → 余震，逐节点写一句话，对照 `satisfaction-matrix.md#有效爽点判定` 4 选 3
+  7. **完整爽点弧（4 节点）**：痛点 → 蓄力 → 小释放 → 余震，逐节点写一句话；生成阶段不额外读取 `satisfaction-matrix.md`，只按「具体痛点 / 明确蓄力 / 可见小释放 / 余震反应」四项至少三项成立判断
   8. **观众承诺**：本集结束观众会期待第 2 集兑现什么具体钩子？（不是"看下去"，而是"看 X 怎么发生"）
-  9. **尾钩事件**：能回答"下一秒谁要做什么"的事件钩；OS 立誓 / 独白 / 回忆 / 抽象质问**不接受**为单独尾钩（详见 `hook-design.md#事件钩定义`）
+  9. **尾钩事件**：能回答"下一秒谁要做什么"的事件钩；OS 立誓 / 独白 / 回忆 / 抽象质问**不接受**为单独尾钩（按 D 段仅在写集末钩子时读取 `hook-design.md` 核心 30 行）
   10. **第 2 集承接**：尾钩在第 2 集前 3 单元怎么兑现的具体动作
 
 **Step 1：先写前 30 秒并自检**
@@ -572,13 +602,16 @@ graph LR
   2. Step 2 按清单逐场展开（△ 分镜 + 对白 + OS/VO 情绪标签 + 场景头用 `N-N日/外或内 地点` 格式）。
   3. JSON 解析失败容错：重试 1 次 → 仍失败则 fallback 到自由文本 + 强 prompt 提醒 "≤3 场 · 严格分场头格式"，自检后必须复审。
 
-**输出格式：** 见 `references/output-templates-core.md#分集国内模式`（或 `#分集出海模式`）
+**输出格式：** 按 `.drama-state.json#medium` 路由——
+- `medium="ai_live"` 或缺失 → `references/output-templates-core.md#分集国内模式`
+- `medium="comic"` → `references/output-templates-core.md#分集国内模式-comic`
+- `mode="overseas"` → `references/output-templates-core.md#分集出海模式`
 
-**质量要求：** 见 `references/quality-rules.md#分集质量要求`
+**质量要求（生成阶段内联，不额外读取 `quality-rules.md`）：** 本集必须完成 `three-layer-control.md` 锁定的 story job，场景可拍，专业细节有据，连续性承接清楚，格式 marker 齐全；完整评分 rubric 留给 `/自检`。
 
-**上下文连贯性：** 见 `references/quality-rules.md#上下文连贯性`
+**上下文连贯性（生成阶段内联）：** 按 `continuity-ledger.md`、上一集尾钩义务和近集 `CONTINUITY` 承接；发现无法承接时先修本集开头，不继续生成完整集。
 
-**上下文窗口管理：** 见 `references/quality-rules.md#上下文窗口管理50-集长剧`
+**上下文窗口管理（生成阶段内联）：** N ≤ 10 可读全部已完成正文；N > 10 不默认读全部历史正文，改读 ledger + 上一集全文 + 近 2-3 集 `CONTINUITY` / 分集索引，必要时按伏笔证据精确读取远期正文。
 
 **连续性台账（Phase 1A）：**
 - 生成前读取或创建项目根 `continuity-ledger.md`。若老项目 `completedEpisodes > 0` 且 ledger 不存在，先按 `references/continuity-protocol.md#老项目-bootstrap` 生成轻量台账，再写下一集。
@@ -615,7 +648,7 @@ graph LR
 
 **前置条件：** 目标集数已完成；若需读取 `characters.md` 校验 voice/应激模式，先执行「角色档案 finalized 门控」
 
-**加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对；`completedEpisodes > 10` 时优先读 ledger + 目标集正文，不默认加载全部历史正文）, **characters.md**（存在则读；声音指纹#禁用清单或应激模式触发时，先查 continuity-ledger.md #角色动态状态：有触发事件记录 → 弧线兑现，标 `[骨架层确认]` 不阻断；无记录 → 标 `[骨架层修复]`，提示"若为刻意弧线节点请在 ledger 记录触发事件"；口吻漂移但未触及禁区/应激模式 → `[血肉层建议]` 不阻断）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, `dialogue-craft-cn.md`（中文对白 30% 删除 / 大声读 / 节奏扫描 / 潜台词补回）, `vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏；/自检 全量读取，用于工艺维度评分和 --fix 修复参考）, **国内模式额外加载：** `commercial-ledger-cn.md`（把买单理由缺失、付费承诺漂移、爽点未兑现、反派压力不升级归入商业生命力诊断）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
+**加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, rhythm-curve.md（节奏曲线复盘）, satisfaction-matrix.md（爽点矩阵复盘）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对；`completedEpisodes > 10` 时优先读 ledger + 目标集正文，不默认加载全部历史正文）, **characters.md**（存在则读；声音指纹#禁用清单或应激模式触发时，先查 continuity-ledger.md #角色动态状态：有触发事件记录 → 弧线兑现，标 `[骨架层确认]` 不阻断；无记录 → 标 `[骨架层修复]`，提示"若为刻意弧线节点请在 ledger 记录触发事件"；口吻漂移但未触及禁区/应激模式 → `[血肉层建议]` 不阻断）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, `dialogue-craft-cn.md`（中文对白下限 + 三问 / 大声读 / 节奏扫描 / 潜台词补回）, `vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏；/自检 全量读取，用于工艺维度评分和 --fix 修复参考）, **国内模式额外加载：** `commercial-ledger-cn.md`（把买单理由缺失、付费承诺漂移、爽点未兑现、反派压力不升级归入商业生命力诊断）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
 
 **支持格式：** `/自检 5` | `/自检 1-10` | `/自检 all` | `/自检 5 --fix`
 
@@ -803,17 +836,18 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 ### /导出
 
-**功能：** 将完成的剧本导出为 Word（.docx）格式完整文件，含人物小传与综合梗概。
+**功能：** 将完成的剧本导出为 Word（.docx）格式交付文件；内容块可按用户要求选择。默认按《女相师》行业稿标准顺序排列：剧情介绍 → 剧情脉络 → 人物介绍 → 分集梗概 → 正文/分集。
 
 **用法：**
-- `/导出` → 导出完整剧本包（全部已完成集数 + 人物小传 + 梗概），直接生成 Word（.docx）
+- `/导出` → 导出完整剧本包（默认：剧情介绍 + 剧情脉络 + 人物介绍 + 分集梗概 + 全部已完成集数/正文），直接生成 Word（.docx）
 - `/导出 --force-resynth` → 强制绕过梗概综合缓存重新综合（用于作者改了已完成集正文后想重跑）
 - `/导出 --with-bible-ref` → 保留本集考据引用附录（默认剥离）
 - `/导出 {N}` → **单集导出**：仅导出第 N 集剧本正文 .docx，不含人物小传/梗概（见下方「单集导出」段）
+- `/导出 {A}-{B}` 或 `/导出 前{N}集` → **多集范围导出**：导出指定范围 .docx；未说明内容块时先给用户选择提示（见下方「多集范围导出」段）
 
 **前置条件：** 至少完成部分集数
 
-**角色档案门控：** 完整导出包含人物小传，读取 `characters.md` 前执行「角色档案 finalized 门控」。单集导出不读取人物小传时可跳过。
+**角色档案门控：** 完整导出默认包含人物介绍，读取 `characters.md` 前执行「角色档案 finalized 门控」。单集导出默认只含正文，可跳过；多集范围导出若选择带人物介绍，则必须执行该门控。
 
 **三层门控：** 读取 `three-layer-control.md`。若 `.drama-state.json#mode == "overseas"`，额外读取 `references/overseas/compliance-risk.md`、`hard-rules.md`，确认目标市场、IP/相似性、真实人物/AI 肖像和 source inspiration 清单已检查。`/导出` 只因地基层 hard gate、格式/文件/docx 合法性失败、海外导出合规清单缺失，或已自检且不合格的集数阻断；血肉层低分或质感弱不单独阻断导出，只能作为导出前建议。
 
@@ -821,13 +855,34 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **入口确认提示（`/导出` 无集数参数时，执行任何门控之前输出）：**
 ```
-本次将导出《{剧名}》完整剧本文件（{completedEpisodes 数量} 集），包含：
-· 全部已完成集数剧本正文
-· 人物小传（从 characters.md 综合）
-· 最终梗概（从 creative-plan.md + 实际集数综合）
+本次将导出《{剧名}》完整剧本文件（{completedEpisodes 数量} 集）。
+默认内容块：剧情介绍（可选）/ 剧情脉络（可选）/ 人物介绍（可选）/ 分集梗概（可选）/ 正文或分集。
+若需要指定内容块和顺序，请直接说明；否则按默认行业交付稿顺序导出。
 
-如只需导出单集，请用 /导出 {N}
-继续请回车，或输入 /导出 {N} 跳转单集导出。
+如只需导出单集，请用 /导出 {N}；如只需导出前 10 集，请用 /导出 前10集 或 /导出 1-10。
+继续请回车，或输入范围跳转局部导出。
+```
+
+**导出前内容选择引导（强制）：**
+
+当用户触发 `/导出`、`/导出 1-10`、`/导出 前10集` 等命令，但没有明确说明内容块时，先输出下列选择提示；用户已明确说“只要纯正文”“带人物介绍和梗概”等，则按其要求执行，不重复询问。
+
+```
+本次导出范围：{全剧/第 A-B 集/第 N 集}
+行业稿标准顺序固定为：剧情介绍 → 剧情脉络 → 人物介绍 → 分集梗概 → 正文/分集。
+
+可选内容要素：
+1. 剧情介绍（可选）：3-5 段完整梗概，说明整体设定、主线冲突、关键转折和结局方向。
+2. 剧情脉络（可选）：按篇章或集数段概括，如“（1-10集）：开局篇……”，适合前 10 集试读或阶段交付。
+3. 人物介绍（可选）：主要角色自然段介绍，包含身份、关系、性格和角色发展；不保留字段表。
+4. 分集梗概（可选）：逐集短梗概，如“第一集……”，用于正文前快速看全局；优先来自 episode-directory，缺失时由 LLM 基于每集正文生成临时梗概文件。
+5. 正文/分集（必选）：本次选定范围内的剧本正文。
+
+请选择导出方案：
+A. 标准行业稿（推荐）：1 + 2 + 3 + 4 + 5
+B. 试读精简稿：2 + 3 + 4 + 5
+C. 纯正文：5
+D. 自定义：回复要包含的编号，如“1+3+5”
 ```
 
 **质量门控（强制）：**
@@ -837,9 +892,9 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 
 **完整执行协议（梗概综合 / 人物小传 / hash 规范化 / 考据附录剥离）：** 读取 `references/export-protocol.md`。
 
-**输出格式：** 见 `references/output-templates-aux.md#导出`
+**输出格式与版式：** 见 `references/output-templates-aux.md#导出`。最终 Word 必须使用《女相师》类行业交付稿版式，不使用大号居中标题或 Markdown 残留。
 
-**Word 导出流程：** 调用 `python3 {skill目录}/scripts/export_docx.py "export/{剧名}-完整剧本.md" "export/{剧名}-完整剧本.docx"`，脚本依赖 `python-docx` + `lxml`（纯 Python，无需 pandoc）；未安装时输出 `pip3 install python-docx lxml` 指引。
+**Word 导出流程：** 先调用 `python3 {skill目录}/scripts/prepare_export.py --project-dir "{项目目录}" --range "{范围}" --profile "{standard|preview|body|custom}" ...` 生成临时 Markdown；完整导出加 `--full`，确保输出名为 `export/{剧名}-完整剧本.docx`。再调用 `python3 {skill目录}/scripts/export_docx.py "{临时Markdown}" "{输出docx}"`。`prepare_export.py` 负责范围解析、缺集检查、正文剥离、分集梗概抽取、合并、导出名解析、名称不一致确认和剧集文件改名检测；`export_docx.py` 只负责 Word 版式与 Markdown 清理。若 `dramaTitle/projectName/目录名` 不一致且用户未给 `--title`，脚本会阻断并要求用户选择 A/B/C/D/E；用户选择后用 `--title "{选择的导出名}"` 重跑。只有用户明确选择 E 时，才修改 `.drama-state.json`。若缺少标准 `episodes/ep{NNN}.md` 但发现候选改名文件，脚本会阻断并要求用户选择：A 重命名为标准文件名、B 用 `--episode-file-map` 本次映射、C 取消整理目录。若缺少分集梗概，LLM 先基于剥离后的正文生成临时分集梗概文件，再用 `--episode-summaries-file` 重跑，不由脚本自动编写摘要。
 
 **输出：** `export/{剧名}-完整剧本.docx`
 
@@ -854,8 +909,8 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 **流程：**
 1. 读取 `episodes/ep{NNN}.md`，按 `<!-- 剧本正文到此结束 -->` 边界剥离考据附录（行为同完整导出的剥离规则）
 2. 质量门控：若该集 `/自检` 不合格（读 `checks/ep{NNN}-check.md`），**阻断并提示**"第 {N} 集自检不合格（{X}分），建议先修改后再导出。传 `--force` 强制导出"；未跑自检则标黄提示不阻断
-3. 将第 1 步剥离后的正文写入临时文件 `export/.tmp-ep{NNN}-stripped.md`（只含 `<!-- 剧本正文到此结束 -->` 之前内容，不含 `CONTINUITY` / 考据附录）
-4. 调用 `python3 {skill目录}/scripts/export_docx.py "export/.tmp-ep{NNN}-stripped.md" "export/{剧名}-ep{NNN}.docx"` 生成 .docx
+3. 调用 `prepare_export.py --project-dir "{项目目录}" --range "{N}" --profile body` 生成临时文件（只含 `<!-- 剧本正文到此结束 -->` 之前内容，不含 `CONTINUITY` / 考据附录）
+4. 调用 `python3 {skill目录}/scripts/export_docx.py "{prepare_export.py 输出的 markdown}" "export/{剧名}-ep{NNN}.docx"` 生成 .docx
 5. 导出成功后可保留临时文件用于排查；再次导出同集时覆盖该临时文件
 
 **输出：** `export/{剧名}-ep{NNN}.docx`
@@ -863,6 +918,29 @@ python3 {skill目录}/scripts/character_consistency_check.py \
 **结束提示：**
 ```
 [完成] 第 {N} 集已导出 → export/{剧名}-ep{NNN}.docx
+```
+
+---
+
+**多集范围导出（`/导出 {A}-{B}` / `/导出 前{N}集`）：**
+
+**功能：** 只导出指定集数范围。适合阶段性交付、试读前 10 集或平台分批验收。若用户未说明内容块，必须先输出「导出前内容选择引导」；选定后按行业稿标准顺序组装，不在默认情况下跳过询问。
+
+**前置条件：** 范围内 `episodes/ep{NNN}.md` 均存在；若有缺失，列出缺失集数并阻断。
+
+**流程：**
+1. 解析范围：`前10集` 等价于 `1-10`；`5-8` 等价于第 5 至第 8 集，必须按升序导出。
+2. 对范围内每集执行与单集相同的剥离规则：按 `<!-- 剧本正文到此结束 -->` 只保留正文；默认不保留 `CONTINUITY` / 考据附录。
+3. 质量门控逐集执行：任一已自检且不合格的集数阻断；未自检只提示不阻断。
+4. 根据用户选择组装内容块：A=剧情介绍+剧情脉络+人物介绍+分集梗概+正文；B=剧情脉络+人物介绍+分集梗概+正文；C=正文；D=按用户编号选择。除非用户明确要求重排，否则顺序固定为剧情介绍 → 剧情脉络 → 人物介绍 → 分集梗概 → 正文。
+5. 调用 `prepare_export.py --project-dir "{项目目录}" --range "{A}-{B}" --profile "{standard|preview|body|custom}" ...` 生成临时 Markdown。若脚本提示缺少 `1:剧情介绍` / `3:人物介绍` 等语义块，LLM 先生成对应临时块文件，再用 `--synopsis-file` / `--characters-file` 等参数重跑；不得把缺失块占位符写入交付稿。
+6. 调用 `python3 {skill目录}/scripts/export_docx.py "{prepare_export.py 输出的 markdown}" "export/{剧名}-ep{AAA}-ep{BBB}.docx"` 生成 .docx。
+
+**输出：** `export/{剧名}-ep{AAA}-ep{BBB}.docx`
+
+**结束提示：**
+```
+[完成] 第 {A}-{B} 集已导出 → export/{剧名}-ep{AAA}-ep{BBB}.docx
 ```
 
 ---
