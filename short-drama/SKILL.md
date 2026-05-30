@@ -646,6 +646,14 @@ graph LR
 
 **视角切换：** [质检] **质检主管**——你不是这个剧本的作者，你是平台方的审稿人。你的 KPI 是淘汰率，不是通过率。对自己之前写的内容零情面，该扣分就扣分，该标【严重】就标。
 
+**独立 agent 强制执行（产出者≠审查者）：** `/自检` 的评分和严重项判定必须由独立质检 agent 完成，调度端不得自评自己刚生成或修改的剧本。
+
+- 调度端职责：解析集数范围、读取/确认活跃项目路径、检查角色档案 finalized 门控、准备必须传入独立 agent 的文件路径清单、回收审查结果、按结果写入 `checks/` 摘要和必要 state 字段。
+- 独立质检 agent 职责：按本节「加载参考」「检查维度」「评分标准」完整读取剧本与参考资料，逐集输出观察事实、扣分依据、总分、严重项、修复建议和 `checks/ep{NNN}-check.md` 摘要内容。独立 agent 不改剧本正文。
+- 若运行环境提供 Task/subagent/Agent 工具，必须启动独立 agent 执行；范围模式（`N-M` / `all`）可按 3-5 集一批并行，但每个 batch 仍需独立上下文。
+- 若当前运行环境没有可用的独立 agent 工具，输出 `[阻断] 当前环境无法启动独立质检 agent，/自检 不执行。请在支持 Task/subagent 的环境运行，或明确改用人工审稿。` 不得退回调度端自评。
+- `--fix` 模式：先由独立质检 agent 完成评分报告；调度端只根据报告执行修复；修复后必须重新启动独立质检 agent 复审，不得用调度端自行宣布通过。
+
 **前置条件：** 目标集数已完成；若需读取 `characters.md` 校验 voice/应激模式，先执行「角色档案 finalized 门控」
 
 **加载参考：** three-layer-control.md（区分地基层阻断、骨架层修复和血肉层建议；craft 低分不得单独 BLOCKED）, continuity-protocol.md（连续性对账）, quality-rules.md（自检维度细则 + 跨介质通用规则）, rhythm-curve.md（节奏曲线复盘）, satisfaction-matrix.md（爽点矩阵复盘）, creative-intent-ledger.md（把背离原始冲动列为 soft risk；只有同时触发 OOC、事实矛盾、合规、不可拍或媒介不匹配时升级 hard gate）, **continuity-ledger.md**（存在则读，用于角色动态状态、尾钩义务和伏笔登记核对；`completedEpisodes > 10` 时优先读 ledger + 目标集正文，不默认加载全部历史正文）, **characters.md**（存在则读；声音指纹#禁用清单或应激模式触发时，先查 continuity-ledger.md #角色动态状态：有触发事件记录 → 弧线兑现，标 `[骨架层确认]` 不阻断；无记录 → 标 `[骨架层修复]`，提示"若为刻意弧线节点请在 ledger 记录触发事件"；口吻漂移但未触及禁区/应激模式 → `[血肉层建议]` 不阻断）, **按 `.drama-state.json#medium` 额外加载：** `ai-live-rules.md`（medium="ai_live" 默认/缺失）或 `comic-rules.md`（medium="comic"）, quality-rubric.md（--fix 流程 + 分数持久化 + medium 分叉）, `dramatic-truth.md`（对白真实性 4 症状清单：Trailer-Speak / Metaphor Overdose / As-You-Know-Bob / Urgency Mismatch；对每条角色长台词 ≥10 词逐句校验）, `dialogue-craft-cn.md`（中文对白下限 + 三问 / 大声读 / 节奏扫描 / 潜台词补回）, `vertical-drama-craft.md`（信息密度+段落颗粒+钩子节奏；/自检 全量读取，用于工艺维度评分和 --fix 修复参考）, **国内模式额外加载：** `commercial-ledger-cn.md`（把买单理由缺失、付费承诺漂移、爽点未兑现、反派压力不升级归入商业生命力诊断）, **按 `.drama-state.json#mode` 额外加载：** `mode="overseas"` 时强制加载 `references/overseas/` 分层资料（见 /出海 命令完整清单），不读取国内商业账本
@@ -667,7 +675,7 @@ graph LR
 | 对白格式合规 | 硬约束 | 按 `.drama-state.json#scriptFormat` 分化：`cn-shortdrama` 或缺失时扫全文对白是否含双引号；`hollywood` 时反向检查对白必须含双引号 | 违反 → 标【严重】不计入总分但阻断 /导出，提示修复 |
 | 破折号禁用 | 硬约束 | 统计**剧本正文**中 `——` / `—` / `--` 出现次数（排除 `>` 引用块 / `<!-- ... -->` HTML 注释 / 前情提要引用 / 集末自查 / 本集考据引用附录等元信息段）| 0 次合规；≥1 次 → 标【严重】并要求改写；用动作描写、换对话轮次、完整句、句号、逗号或中文省略号「…」替代 |
 
-**输出/流程：** 输出格式 `output-templates-core.md#自检`；`--fix` 模式 + 分数持久化见 `quality-rules.md`。
+**输出/流程：** 输出格式 `output-templates-core.md#自检`；评分正文来自独立质检 agent，调度端只做汇总和文件落盘；`--fix` 模式 + 分数持久化见 `quality-rules.md`。
 
 **评分标准：** 总分动态——厚型/中型 80（含第 8 维度），轻型 70（第 8 维度 N/A）。完整阈值+过稿预估见 `quality-rubric.md#评分标准与平台过稿预估`。
 
