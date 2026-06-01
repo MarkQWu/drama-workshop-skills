@@ -1,3 +1,9 @@
+**v0.5.1**（2026-06-01）
+
+修复：补齐 `three_layer_control_boundaries` fixture 的 project / snapshots 占位目录，使 release-gate 的 `REMAKE_CONTRACTS` 检查可完整通过；不改变 `/仿写` 用户行为。
+
+---
+
 **v0.5.0**（2026-05-20）
 
 MCP 数据增强：接入网文大数据，新增两个无剧本/数据驱动入口。
