@@ -21,7 +21,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 ## 创作状态追踪
 
-`/开始` 扫描 `~/short-drama-projects/*/` 让用户选项目，选中后该 `.drama-state.json` 即活跃 state。详细规则（state schema / fallback / 迁移白名单）见 `references/project-management.md`。**强制全局规则**：所有修改 state 的命令（`/开始` `/考据` `/角色开发` `/分集目录` `/分集` `/自检` `/角色卡` `/分镜`）必须 Read-Modify-Write，**严禁** overwrite（见 `project-management.md#state-写入协议`）。
+`/开始` 扫描 `~/short-drama-projects/*/` 让用户选项目，选中后该 `.drama-state.json` 即活跃 state。详细规则（state schema / fallback / 迁移白名单）见 `references/project-management.md`。**强制全局规则**：所有创建或修改 state 的命令（`/开始` `/新建` `/出海` `/考据` `/角色开发` `/分集目录` `/分集` `/自检` `/选题会` `/圆桌诊断` `/导出` `/角色卡` `/分镜`）必须 Read-Modify-Write，**严禁** overwrite（见 `project-management.md#state-写入协议`）。
 
 ## 角色档案 finalized 门控（读取 characters.md 前强制）
 
@@ -289,10 +289,10 @@ ORDER BY heat_score DESC LIMIT 10
 
 **输出格式：** 见 `references/output-templates-aux.md#选题会`
 
-**结束提示（强制逐字输出，{文件名} 必须替换为上方文件管理步骤中实际生成的文件名基名，例如 `clash-20260501-1430`；禁止保留花括号占位符）：**
+**默认结束提示（{文件名} 必须替换为上方文件管理步骤中实际生成的文件名基名，例如 `clash-20260501-1430`；禁止保留花括号占位符）：**
 `[完成] 选题会记录已保存 → clashes/{文件名}.md | 双击 clashes/{文件名}.html 用浏览器查看张力图（离线可用，无任何依赖）| 想深化方向？输入 /策划 构建故事骨架`
 
-**数据增强（MCP 可用时）：** 见 `references/roundtable-protocol.md` 对应章节。
+**数据增强（MCP 可用时）：** 见 `references/roundtable-protocol.md` 对应章节；MCP 不可用时使用协议里的 `/配置数据` 版本结束提示，优先级高于上方默认提示。
 
 ---
 
@@ -665,7 +665,7 @@ python3 {skill目录}/scripts/character_consistency_check.py \
    - 存在 + `currentStep` 为空（stub 残留）→ 覆盖 stub（安全）
    - 损坏 JSON → 询问覆盖重建
    - 不存在 → 继续
-3. **建目录 + 写完整 stub state**（26 字段）：`mkdir -p ~/short-drama-projects/<项目名>/` + 写 `.drama-state.json`，stub 模板见 `references/project-management.md#stub-state`（仅 projectName/dramaTitle 填值，其他字段初始化为空数组/对象/字符串）
+3. **建目录 + 写完整 stub state**（27 字段）：`mkdir -p ~/short-drama-projects/<项目名>/` + 写 `.drama-state.json`，stub 模板见 `references/project-management.md` 的「/新建 stub state 模板（27 字段完整）」章节（仅 projectName/dramaTitle 填值，其他字段初始化为空数组/对象/字符串）
 4. 输出："项目《X》已创建。输入 `/开始` 进入选题流程"
 
 **与 `/开始` 分工：** `/开始` = 入口扫描 + 让用户选；`/新建` = 显式新建，不进选择列表

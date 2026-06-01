@@ -245,7 +245,7 @@ read_when: /开始, /新建, /分集, /自检, and any command that reads or wri
 
 | 字段 | 类型 | 语义 |
 |------|------|------|
-| `lastSynopsisTimestamp` | string (ISO 8601, e.g. `"2026-04-24T10:30:00+08:00"`) | 上次成功综合并用户选 Y 的时间戳 |
+| `lastSynopsisTimestamp` | string (ISO 8601, e.g. `"2026-04-24T10:30:00+08:00"`) | 上次成功综合并写入缓存的时间戳 |
 | `lastSynopsisEpisodeCount` | number | 上次综合时 `len(completedEpisodes)` 字面快照——**取列表长度，不是实际参与 hash 计算的集数**（某些 entry 对应的 `ep{entry}.md` 可能因移入 `.trash` 等原因缺失而被 hash 跳过+warn，但 count 仍存完整列表长度，与 step 1 双条件的 `当前 completedEpisodes.length` 比对保持口径一致）|
 | `lastSynopsisEpisodeHash` | string (md5 十六进制, 32 字符) | `md5(按 completedEpisodes 字典序升序拼接所有完成集 ep{entry}.md 剥离考据附录后正文，经 LF 归一 + 两端 strip + \n---EP_BOUNDARY---\n 分隔)`——作者改已有集正文会让缓存失效 |
 | `lastSynopsisPath` | string | 缓存梗概正文相对路径，固定为 `".drama-state/synopsis-cache.md"` |
@@ -254,9 +254,9 @@ read_when: /开始, /新建, /分集, /自检, and any command that reads or wri
 1. `lastSynopsisEpisodeCount == 当前 completedEpisodes.length`
 2. `lastSynopsisEpisodeHash == md5(当前所有完成集剥离考据附录后正文按字典序升序拼接，经规范化)`
 
-**写入时机**：仅当用户在 `/导出 --docx` 三选一提示中选 Y 时，按 Read-Modify-Write 写回 state 并将综合梗概正文落 `.drama-state/synopsis-cache.md`。N / E 分支均不写缓存，也不写 state 4 字段（保持前次值，含空值）。
+**写入时机**：`/导出` 完成 LLM 综合并通过导出门控后，按 `references/export-protocol.md#梗概综合执行协议` 自动采用综合梗概，写入 Word，并按 Read-Modify-Write 写回 state 4 字段，同时将综合梗概正文落 `.drama-state/synopsis-cache.md`。`--force-resynth` 只强制绕过旧缓存重新综合，不跳过成功后的缓存写入。
 
-**向后兼容**：老项目（v1.17.3 及以前）state 无这 4 字段 → 加载时视为 cache miss（自然首次综合），无需显式迁移脚本或交互询问。首次 Y 分支完成后 4 字段落地。`lastSynopsisPath == ""` 时不尝试读缓存文件（视为 miss）。
+**向后兼容**：老项目（v1.17.3 及以前）state 无这 4 字段 → 加载时视为 cache miss（自然首次综合），无需显式迁移脚本或交互询问。首次成功综合并导出后 4 字段落地。`lastSynopsisPath == ""` 时不尝试读缓存文件（视为 miss）。
 
 **`.drama-state/synopsis-cache.md` 格式**：纯 markdown 正文（无 YAML front matter，无 header）。该文件由 LLM 读入重用，不做结构化解析。目录 `.drama-state/` 是 v1.18.1 新增的项目级缓存目录，与同级 `.drama-state.json` 共享命名空间；未来可扩展放其他缓存件。缓存目录首次写入时由 `/导出 --docx` 的步骤 6 执行 `mkdir -p`。
 
