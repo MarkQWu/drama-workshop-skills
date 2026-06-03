@@ -119,7 +119,7 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
    用户的原始输入保存到 `seedIdea`，brainstorm 选定的方向保存到 `logline`。brainstorm 发散的**全部 4 个方向**（选中 + 3 个淘汰）写入 `brainstorm.md#方向草案` 供回看。随后按 `references/creative-intent-ledger.md` 写入 `brainstorm.md#原始冲动记录`，字段包括：原始前提、核心关系、爽感引擎、结局偏好、不可牺牲点；信息不足时写 `[待确认]`，不臆造。
 
-6. **推荐配置确认（选择题模式）：** 根据已确定的题材，从 `genre-guide.md#题材推荐配置映射表` 查出推荐值，一次性展示推荐配置卡（受众细分/基调/结局/集数/语言/**承制介质**各一行，每项标 [推荐]）。**承制介质**选项：`ai_live`（仿真人 AI 剧 · 3-5 场 / 严格反抽象 / 单条台词 ≤2 句 · 默认）或 `comic`（漫剧 · ≤3 场 / 单条台词 ≤6 句 / OS/VO 带情绪标签 / 分镜切片密集）。用户回复"确认"或修改项。每次修改配置时，把决策过程追加到 `brainstorm.md#配置决策历史`。
+6. **推荐配置确认（选择题模式）：** 根据已确定的题材，从 `genre-guide.md#题材推荐配置映射表` 查出推荐值，一次性展示推荐配置卡（受众细分/基调/结局/集数/语言/**承制介质**各一行，每项标 [推荐]）。**承制介质**选项：`ai_live`（仿真人 AI 剧 · 3-5 场 / 可拍动作优先 / 长台词按节奏风险评估 · 默认）或 `comic`（漫剧 · ≤3 场 / 单条台词 ≤6 句 / OS/VO 带情绪标签 / 分镜切片密集）。用户回复"确认"或修改项。每次修改配置时，把决策过程追加到 `brainstorm.md#配置决策历史`。
 
 7. 如用户选择海外/出海题材或目标平台，自动切换为出海模式。切换前先读 `references/overseas/layer-index.md`、`platform-knowledge.md`、`hard-rules.md`、`compliance-risk.md`、`anti-domestic-transfer.md`，要求配置卡明确目标市场 / 平台 / 受众假设；信息不足时写 `[待确认]`，不得把国内题材映射直接当海外规则。默认写入 `mode: "overseas"`、`language: "zh-CN"`、`scriptFormat: "cn-shortdrama"`；只有用户明确要求英文交付/好莱坞格式时，才写入 `language: "en-US"`、`scriptFormat: "hollywood"`。汇总确认后，按「state 写入协议」保存状态。
 
@@ -310,7 +310,7 @@ ORDER BY heat_score DESC LIMIT 10
 
 **voice 生成前置门（强制）：**
 - 生成任何 `声音指纹 + voice 样本集` 前，先按 `dialogue-craft-cn.md#角色开发声音指纹` 执行：样本是短场景对白，不是角色小传、作者旁白或金句库。
-- 当前 batch 含 `core` 或 `long_arc` 角色时，先读 `dramatic-truth.md` 四症状清单；每条样本自查是否像对戏内对手说话，若像对观众解释背景，必须重写。
+- 当前 batch 含 `core` 或 `long_arc` 角色时，先读 `dramatic-truth.md` 四症状清单；每条样本自查是否像对戏内对手说话，若像对观众解释背景，优先重写或补足戏内触发情境。
 - 生成 `禁用` 字段前，先按 `constraint-design.md#B 类约束标准格式` 写成 `触发情境 / 禁用误写 / 替代路径 / 豁免条件`，不得只写“不说 X”。
 
 **状态机协议（强制）：**

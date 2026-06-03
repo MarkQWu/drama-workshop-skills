@@ -1,6 +1,6 @@
 # /分集执行协议
 
-> 本文件由 `/分集 {N}` 读取，承接引用加载、生成硬约束、Ep1 设计卡、medium 分叉、连续性台账、used-lines 写入和结束提示。
+> 本文件由 `/分集 {N}` 读取，承接引用加载、生成规则、Ep1 设计卡、medium 分叉、连续性台账、used-lines 写入和结束提示。
 > SKILL.md 只保留入口、前置条件和协议指针。
 
 ---
@@ -20,7 +20,7 @@
 - `mode="overseas"` → Read `references/overseas/` 分层资料（详见 /出海 命令完整清单），不读国内商业账本
 
 **D. 条件加载（按条件 if 触发）**
-- `opening-rules.md` — 仅 N=1 时 Read（第 1 集首集硬合同），N≥2 跳过
+- `opening-rules.md` — 仅 N=1 时 Read（第 1 集首集留存强建议），N≥2 跳过
 - `continuity-protocol.md` — 仅 N>1 时 Read（跨集剧情记忆）
 - `hook-design.md` — 仅写集末钩子时 Read 核心 30 行（事件钩定义段）
 - `setting-bible.md` — 存在则读（专业细节强制引用）
@@ -43,7 +43,7 @@
 
 **圆桌处方加载（重写/修改场景）：** 当 `episodes/ep{NNN}.md` 已存在时（重写/修改场景），优先加载 `roundtables/` 目录下 ep{NNN} 对应的最新诊断文件。若文件存在，提取 `<!-- PRESCRIPTIONS -->` 块，将处方列表 inline 到重写 prompt 前置上下文中（格式：`[圆桌处方] 处方1 | 处方2 | ...`）。无文件则跳过，不影响正常生成流程。
 
-## 生成硬约束
+## 生成规则
 
 - **破折号禁用：** 剧本正文不出现破折号。禁止 `——`、`—`、`--`，包括台词停顿、被打断、场景补充说明、心理独白引出。需要停顿或打断时，用动作描写、换对话轮次、完整句、句号、逗号或中文省略号「…」替代。不把它留给 /自检 再返工。双层防线：生成层禁用 + 自检层出现即标【严重】。
 - **画面可拍性实时节制：** 写 △ 段落时问自己：摄影机能拍到这句吗？OS/VO 层允许诗意比喻（anchor 红利承载位），△ 场景叙事层必须可拍（物件 / 动作 / 环境 / 表情）。生成阶段只执行本句内联原则，不额外读取 `quality-rules.md`；详细扣分留给 `/自检`。
@@ -52,11 +52,11 @@
 - **商业账本对账（国内模式）：** 生成前读取 `creative-plan.md#商业账本` 和 `episode-directory.md` 的目录版商业职责；本集写完后在集末自查补齐本集买单理由、付费/尾钩压力、爽点兑现状态、反派压力变化。缺失时先补结构职责，不用空泛口号代替。
 - **对白下限 + 三问：** 写每场对白前先按 `dialogue-craft-cn.md#对白合理性下限` 情境驱动准则确保本场对白下限达标（≥2 角色同框有戏剧动态、关键剧情节点、独角戏外部触发等场景必须有对白），再按 `dialogue-craft-cn.md#/分集：对白三问` 优化已写对白的质量。三问是优化工具，不是用来削减对白到下限以下。
 
-## Ep1 设计卡强制流程
+## Ep1 设计卡流程
 
 N=1 且 `mode=domestic` 专用；N≥2 或 `mode=overseas` 跳过本段。
 
-执行 `/分集 1` 前先读取 `.drama-state.json#mode`。若 `mode="overseas"`，跳过国内 Ep1 设计卡强制流程，改按 `references/overseas/hard-rules.md` Rule 10 + `references/overseas/anti-patterns.md` 的海外首集规则执行：首集必须 active conflict / mid-conflict 直入，不能套用国内冷开场合同、有效爽点判定、事件钩首集硬约束或首集传播句提取。
+执行 `/分集 1` 前先读取 `.drama-state.json#mode`。若 `mode="overseas"`，跳过国内 Ep1 设计卡流程，改按 `references/overseas/hard-rules.md` Rule 10 + `references/overseas/anti-patterns.md` 的海外首集规则执行：首集优先 active conflict / mid-conflict 直入，不能套用国内冷开场强建议、有效爽点判定、事件钩首集规则或首集传播句提取。
 
 第 1 集是首集留存的决战场。国内模式下，`/分集 1` 不直接写正文，按以下三步走，无 fast-track。
 
@@ -78,10 +78,10 @@ N=1 且 `mode=domestic` 专用；N≥2 或 `mode=overseas` 跳过本段。
 **Step 1：先写前 30 秒并自检**
 
 - 设计卡通过后，只写前 30 秒（约前 3 个动作/对白单元）正文，不写全集。
-- 自检 2 项硬合同：
-  - `opening-rules.md#首集冷开场硬合同` 4 项必满（可见冲突 / 弱势处境 / 明确压迫者 / 信息差或身份差）
+- 自检 2 项留存风险：
+  - `opening-rules.md#首集冷开场强建议` 4 项优先满足（可见冲突 / 弱势处境 / 明确压迫者 / 信息差或身份差）
   - 0-3s 冲突点 `[锚点]` 标记齐
-- 缺任一项 → 重写前 30 秒（不进入“微调”），最多 3 轮，3 轮仍不达标 → 回炉 Step 0 改设计卡。
+- 缺任一项 → 标为首集留存风险，优先微调或重写前 30 秒；若 3 轮仍不理想，回炉 Step 0 改设计卡。
 
 **Step 2：写完整集 + 提取首集传播句**
 
@@ -90,7 +90,7 @@ N=1 且 `mode=domestic` 专用；N≥2 或 `mode=overseas` 跳过本段。
 
 ## medium 分化生成流程
 
-- `medium="ai_live"`（默认）→ 自由文本生成，遵循 `ai-live-rules.md` 硬规则（3-5 场 / 台词 ≤2 句 / 微表情禁用）。
+- `medium="ai_live"`（默认）→ 自由文本生成，遵循 `ai-live-rules.md` 规则（3-5 场 / 长台词按节奏风险评估 / 微表情按可控性评估）。
 - `medium="comic"` → 两步结构化生成：
   1. Step 1 先产 JSON 场次清单：`[{"scene_id": "1-1", "time": "日|夜", "loc_type": "内|外", "location": "...", "purpose": "一句话"}]`，数组 `length ∈ [1, 3]`（H1 硬约束）。
   2. Step 2 按清单逐场展开（△ 分镜 + 对白 + OS/VO 情绪标签 + 场景头用 `N-N日/外或内 地点` 格式）。
