@@ -37,6 +37,9 @@
 - `medium="comic"` → `references/output-templates-core.md#分集国内模式-comic`
 - `mode="overseas"` → `references/output-templates-core.md#分集出海模式`
 
+**F. 段落颗粒最小加载（永远读）**
+- `vertical-drama-craft.md#原则-1信息单元最小化每行一件事` — 只读该原则段；用于首稿生成时保持动作/对白颗粒，不等到重写或自检后才加载。
+
 ## 生成前上下文注入
 
 **anchor inline + `--fix anchor-rhythm` 子命令：** 如 `creative-plan.md` 有 `anchor` 字段，按 `references/anchor-trigger.md#分集-anchor-inline` 把 anchor prompt 模板 inline 到分集生成 prompt；无 `anchor` 字段则跳过。节奏污染时 `/分集 N --fix anchor-rhythm` 重写（详见 `references/anchor-trigger.md#fix-anchor-rhythm-子命令`）。
@@ -46,6 +49,7 @@
 ## 生成规则
 
 - **破折号禁用：** 剧本正文不出现破折号。禁止 `——`、`—`、`--`，包括台词停顿、被打断、场景补充说明、心理独白引出。需要停顿或打断时，用动作描写、换对话轮次、完整句、句号、逗号或中文省略号「…」替代。不把它留给 /自检 再返工。双层防线：生成层禁用 + 自检层出现即标【严重】。
+- **对白段落边界：** 每个对白/OS/VO cue 独占一个 Markdown 段落，前后空行隔开；同一段落里不得出现第二个 `**角色名**`。连续同一角色发言可以合成一条台词或拆成多个独立段，但不得把 `**角色**：A。 **角色**：B。` 写成同段粘连。括号动作不逐句复制，状态延续改用一条 `△` 动作段承载。
 - **画面可拍性实时节制：** 写 △ 段落时问自己：摄影机能拍到这句吗？OS/VO 层允许诗意比喻（anchor 红利承载位），△ 场景叙事层必须可拍（物件 / 动作 / 环境 / 表情）。生成阶段只执行本句内联原则，不额外读取 `quality-rules.md`；详细扣分留给 `/自检`。
 - **专业细节引用规则：** bible 存在时，所有专业术语/官名/制度/数字/药物剂量/法条必须映射到 bible，否则改模糊或标 `[虚构]`；不额外读取 `quality-rules.md`，考据追溯评分留给 `/自检`。
 - **三层生成边界：** 生成时硬控地基层和骨架层，不把血肉层的具体台词、微动作、比喻数量、句式节奏写成固定模板。若血肉选择无法完成本集 `locked_episode_job`，先修骨架执行；若只是风格强弱，留给 `/自检` 或 `/圆桌诊断` 做建议。
