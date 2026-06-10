@@ -1,4 +1,4 @@
-**v0.5.1**（2026-06-01）
+**v0.5.2**（2026-06-10）
 
 修复：补齐 `three_layer_control_boundaries` fixture 的 project / snapshots 占位目录，使 release-gate 的 `REMAKE_CONTRACTS` 检查可完整通过；不改变 `/仿写` 用户行为。
 
