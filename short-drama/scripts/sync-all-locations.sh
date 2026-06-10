@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# 将 master short-drama/ 同步到 5 个已知副本位置（含 master 自己，等效无操作）
+# Maintainer-only legacy sync helper.
+#
+# 2026-06-10 runtime hygiene: real runtime roots are symlinks to the canonical
+# public working copy. This script is intentionally disabled unless the
+# maintainer sets DRAMA_WORKSHOP_ENABLE_REAL_SYNC=1. Do not use it for routine
+# runtime updates.
 #
 # 使用场景：每次 release（git push + tag + GitHub Release）后运行一次，
 # 消除 5 副本不同步问题（详见 memory/feedback_openclaw-sync-all-locations.md）
 #
-# 5 副本清单（所有均指 short-drama/ 子目录）：
-#   1. ~/.claude/skills/                    （权威版本，主开发位置）
-#   2. ~/.claude/.skill-repos/drama-workshop-skills/  （git 仓库，push origin）
-#   3. ~/.workbuddy/skills/                 （WorkBuddy 运行时）
-#   4. ~/.openclaw/skills/                  （OpenClaw 运行时）
-#   5. ~/碳基生命数据库/.tools/drama-workshop-skills/  （vault 内独立 git 仓库，rsync 等效 git pull）
+# Historical context: this script used to rsync package files into multiple
+# runtime copies, including an old vault path. That model is deprecated.
 #
 # 用法：
 #   bash scripts/sync-all-locations.sh          # 实际同步
@@ -24,6 +25,19 @@
 #   设计原则：物理隔离 > 协议约束（reference_ai-agent-engineering-principles.md）。
 
 set -euo pipefail
+
+if [[ "${DRAMA_WORKSHOP_ENABLE_REAL_SYNC:-}" != "1" ]]; then
+  cat >&2 <<'EOF'
+sync-all-locations.sh is disabled.
+
+Current runtime policy: agent runtime roots should be symlinks to the canonical
+public working copy, not rsync copies. Use git pull in the canonical repository
+and verify symlinks instead.
+
+To run this legacy helper anyway, set DRAMA_WORKSHOP_ENABLE_REAL_SYNC=1.
+EOF
+  exit 2
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MASTER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -44,7 +58,6 @@ DESTINATIONS=(
   "$HOME/.claude/skills/short-drama"
   "$HOME/.workbuddy/skills/short-drama"
   "$HOME/.openclaw/skills/short-drama"
-  "$HOME/碳基生命数据库/.tools/drama-workshop-skills/short-drama"
 )
 
 MASTER_VERSION=$(cat "$MASTER_DIR/VERSION" 2>/dev/null || echo "unknown")

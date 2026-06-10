@@ -48,11 +48,11 @@ description: '爆款剧本工坊（Drama Workshop）— 微短剧剧本创作。
 
 执行任何命令前检查是否有版本更新：
 1. Read `{skill目录}/VERSION` → current_version
-2. Read `{skill目录}/.last-version-shown`（文件不存在视为空字符串）
+2. Read `~/.cache/drama-workshop-skills/short-drama/.last-version-shown`（文件不存在视为空字符串；不得写入 `{skill目录}`）
 3. 若 current_version ≠ last_shown：
    - 若 `{skill目录}/WHATSNEW.md` 存在且首个版本号与 current_version 一致 → 在命令输出最前面展示全部内容（`---` 包围，加「📣 更新提醒」标题）
    - 若 `{skill目录}/WHATSNEW.md` 不存在，或首个版本号与 current_version 不一致 → 在命令输出最前面展示内置更新提醒：”v1.38.6 更新：接入网文大数据 MCP（/配置数据 完成 Key 设置）；/选题会 /策划 启动时询问是否调用实时榜单；新增 /短剧市场；/策划 MCP 提示移至命令入口，生成前先询问；剧本正文破折号完全禁用。”
-   - `echo {current_version} > {skill目录}/.last-version-shown` 记录已展示
+   - 确保 `~/.cache/drama-workshop-skills/short-drama/` 存在，并写入 `~/.cache/drama-workshop-skills/short-drama/.last-version-shown` 记录已展示
 4. 版本相同 → 跳过，直接进入格式控制步骤
 
 ---
@@ -857,11 +857,11 @@ clashes/roundtables 按以下规则决定显示内容：
 2. 等用户粘贴 Key
 3. 校验格式：Key 必须以 `wwmcp_` 开头；不符合则提示「格式不对，Key 应以 wwmcp_ 开头，请重新复制」并重试
 4. 写入 Key——以下文件**都要更新**（用 Edit 工具逐一替换 `X-MCP-API-Key` 字段值）：
-   - `{skill目录}/.mcp.json`（必须，所有平台）
+   - `~/.config/drama-workshop-skills/short-drama/.mcp.json`（必须，所有平台；按包内 `.mcp.example.json` 结构创建；不得写入公开仓 skill 目录）
    - `~/.workbuddy/mcp.json`（若文件存在则更新，WorkBuddy connector 注册表）
 5. 输出：「✅ 配置完成！请重启 WorkBuddy / Claude Code，重启后直接使用 /短剧市场、/选题会、/策划 即可调用真实榜单数据。」
 
-**Key 已配置时：** 读取 `{skill目录}/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。
+**Key 已配置时：** 优先读取 `~/.config/drama-workshop-skills/short-drama/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。若只发现旧版包内 MCP 配置文件，仅作为迁移来源读取，不得继续写入 skill 目录。
 
 ---
 

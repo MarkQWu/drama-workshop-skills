@@ -2,13 +2,13 @@
   "schema_version": "1.0",
   "skill": "short-drama",
   "canonical_repo": {
-    "path": "/Users/gobuildit/碳基生命数据库/.tools/drama-workshop-skills",
+    "path": ".",
     "remote": "https://github.com/MarkQWu/drama-workshop-skills.git",
     "branch": "main",
     "repo_name": "drama-workshop-skills"
   },
   "distribution_repo": {
-    "path": "/Users/gobuildit/碳基生命数据库/.tools/drama-workshop-skills",
+    "path": ".",
     "package_roots": [
       "short-drama",
       "short-drama-remake"

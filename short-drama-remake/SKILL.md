@@ -80,11 +80,11 @@ These advisory meetings are not required workflow steps. They may produce analys
 2. 若用户还没有 Key，提示：「还没有 Key？免费注册：**wangwendashuju.com** → 登录后进入 **wangwendashuju.com/mcp** → 创建 Key → 复制（Key 以 `wwmcp_` 开头）」
 3. 校验格式：Key 必须以 `wwmcp_` 开头；不符合则提示「格式不对，Key 应以 wwmcp_ 开头，请重新复制」并重试
 4. 写入 Key——以下文件**都要更新**（用 Edit 工具逐一替换 `X-MCP-API-Key` 字段值）：
-   - `{skill目录}/.mcp.json`（必须，所有平台）
+   - `~/.config/drama-workshop-skills/short-drama-remake/.mcp.json`（必须，所有平台；按包内 `.mcp.example.json` 结构创建；不得写入公开仓 skill 目录）
    - `~/.workbuddy/mcp.json`（若文件存在则更新，WorkBuddy connector 注册表）
 5. 输出：「✅ 配置完成！请重启 WorkBuddy / Claude Code，重启后 /仿写 发现 和 /仿写 换皮 热度验证即可调用真实榜单数据。」
 
-**Key 已配置时：** 读取 `{skill目录}/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。
+**Key 已配置时：** 优先读取 `~/.config/drama-workshop-skills/short-drama-remake/.mcp.json` 中当前 Key，提示前 8 位，询问是否更换。若只发现旧版包内 MCP 配置文件，仅作为迁移来源读取，不得继续写入 skill 目录。
 
 ---
 

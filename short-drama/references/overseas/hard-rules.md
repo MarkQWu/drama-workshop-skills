@@ -141,7 +141,7 @@ After generating each episode, produce a reverse-test note: "If this beat appear
 
 ### SG1: EP1 Should Detonate, Not Ease In
 
-Open mid-conflict: kidnapping, rejection, confrontation, public humiliation, identity reveal, or another active pressure point. Avoid long static atmosphere openings. See `references/platform-knowledge.md` section 2 for retention context.
+Open mid-conflict: kidnapping, rejection, confrontation, public humiliation, identity reveal, or another active pressure point. Avoid long static atmosphere openings. See `references/overseas/platform-knowledge.md` section 2 for retention context.
 
 Do not enforce a fixed 5-beat EP1 bundle. Specific beat prescriptions are deferred until EP1-3 pilots are hand-written bottom-up and a new beat dictionary is derived from what worked.
 
