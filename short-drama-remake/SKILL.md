@@ -187,6 +187,8 @@ After drafting, run `script_draft.postflight` before unlocking the next episode.
 
 Postflight must include a Flesh-layer memorability check: name the one concrete moment, line, action, or image a viewer can remember. If the answer is only "the process passed" or "the hook exists", mark the episode as process-clean but creatively weak and request revision before treating it as quality-passed.
 
+Postflight must also run a lightweight script-craft scan without reading `short-drama/references/*`: first-screen effective information, event hook, character-entry information, anti-AI dialogue, and meaningless repeated dialogue. Local definitions: first-screen effective information means the opening quickly gives a concrete conflict, pressure, relationship, goal, or visible action; event hook means the ending can answer "who will do what next"; character-entry information means an important first entrance carries identity, situation, relationship, goal, pressure, or action style; anti-AI dialogue means avoiding essay-like connective phrasing, generic summary lines, and dialogue that does not fit the speaker under pressure; meaningless repeated dialogue means repeated questions, confirmations, or explanations that add no new pressure, evidence, action, or choice. Treat these as Flesh/Skeleton review signals: they can request revision or lower quality status, but they do not override source truth, canon, compliance, remake distance, or locked episode function.
+
 Command-layer aliases do not weaken this rule. `/仿写 写集 N`, `/仿写 继续写第 N 集`, and any natural-language continuation request must still pass through the same preflight/postflight protocol.
 
 For deterministic validation, run:

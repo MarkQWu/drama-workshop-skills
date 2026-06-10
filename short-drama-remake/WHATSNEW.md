@@ -2,6 +2,8 @@
 
 修复：补齐 `three_layer_control_boundaries` fixture 的 project / snapshots 占位目录，使 release-gate 的 `REMAKE_CONTRACTS` 检查可完整通过；不改变 `/仿写` 用户行为。
 
+工艺增强：postflight 增加轻量剧本工艺扫描，检查首屏有效信息、事件钩、人物出场信息、反 AI 腔台词和无意义重复对白；保持 remake 隔离，不读取 `short-drama/references/*`。
+
 ---
 
 **v0.5.0**（2026-05-20）
