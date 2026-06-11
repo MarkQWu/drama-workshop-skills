@@ -89,7 +89,8 @@ _prompt_key() {
 # 写入 JSON（jq → node → python3 降级链，写前备份，原子替换）
 _write_mcp_config() {
   local config="$1" type="$2" key="$3"
-  local backup="${config}.bak.$(timestamp)"
+  local backup
+  backup="${config}.bak.$(timestamp)"
   local tmp="${config}.tmp.$$"
 
   [[ -f "$config" ]] && cp "$config" "$backup"
