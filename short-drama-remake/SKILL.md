@@ -6,7 +6,7 @@ description: Analyze reference short-drama scripts or screen-recorded prompt wor
 # Short Drama Remake
 
 > License: SKILL.md, agents metadata, scripts, and bundled code are MIT; references are gobuildit methodology documentation with all rights reserved except use as part of this skill distribution.
-> Version: 0.5.2
+> Version: 0.6.0
 
 ## Core Rule
 
@@ -316,11 +316,11 @@ Rules:
   - `基于这个项目，生成前 10 集详细集纲。每集用起、承、转、合写清楚开场冲突、主角受压、反派动作、爽点/憋屈点、具体证据/道具和结尾钩子。`
   - `强化这个项目的开局 3 集，让冲突更快、误会更狠、反派更可恨、结尾钩子更强，并说明改动理由。`
 - After **episode outline**:
-  - `把第【集数】集写成正式短剧剧本，严格使用：剧名、集数、场次、出场人物、主要道具、可拍摄动作、角色台词、SFX。`
+  - `把第【集数】集写成正式短剧剧本，严格使用：剧名、集数、场次、出场人物、主要道具、可拍摄动作、角色台词、SFX。同一角色连续发言合并为一条台词不重复角色名；每条台词、动作、音效之间空一行；正文不用破折号。`
   - `审查前 10 集集纲，找出节奏拖慢、爽点不清、钩子不够强的地方，并给出修改后的集纲版本。`
 - After **script draft**:
   - `以红果/抖音短剧审稿人标准，检查并强化这集剧本。重点看开局 10 秒、台词是否符合人物设定和场景压力、反派压迫感、爽点释放和结尾钩子。`
-  - `继续写第【下一集】集，必须直接承接上一集结尾钩子，并保持同样的格式、节奏和人物口吻。`
+  - `继续写第【下一集】集，必须直接承接上一集结尾钩子，并保持同样的格式、节奏和人物口吻。同一角色连续发言合并为一条台词不重复角色名；每条台词、动作、音效之间空一行；正文不用破折号。`
 
 Do not leave the user at a dead end. If the latest request is ambiguous, recommend the most logical next stage instead of asking broad questions.
 
@@ -344,3 +344,6 @@ Read [references/prompt-chain.md](references/prompt-chain.md) only when the user
   - `△ 可拍摄动作`
   - `角色名（动作/神态）：台词`
   - `[SFX：音效/画面提示]`
+  - 同一角色连续发言必须合并为一条台词，禁止逐句重复角色名；只有被动作、音效、他人台词隔开，或切换为 OS/VO 形态时才另起一条
+  - 正文中每条台词、每个 `△` 动作、每个 `[SFX]` 独占一段，段与段之间空一行（头部字段块 `剧名：`/`集数：`/`【出场人物】`/`【主要道具】` 保持紧凑，不受此约束）
+  - 正文禁止破折号（`——`、`—`、`--`）；停顿、被打断用动作描写、换对话轮次或中文省略号「…」表达

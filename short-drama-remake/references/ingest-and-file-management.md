@@ -131,6 +131,8 @@ Check:
 
 If a module is missing, inspect `00_source/extracted/source.md` before saying the source does not contain it. The parser may miss uncommon headings.
 
+Source format quirk check: if the reference script contains adjacent same-speaker same-form dialogue cues (subtitle-style per-sentence splitting, e.g. `角色名：句1` immediately followed by `角色名：句2`), append the string `source_format_quirk: per_sentence_cue_splitting` to `validation.warnings` in `manifest.yaml`. Note that re-running ingest regenerates the manifest and drops this manual entry, so re-check after any re-ingest. Downstream skeleton extraction, episode outlines, script drafts, and generated prompts must not replicate this quirk: merge consecutive same-speaker speech into one dialogue cue per this skill's script format rules.
+
 ## PDF Risk Rules
 
 PDF extraction is lower confidence than `.docx` or plain text.
